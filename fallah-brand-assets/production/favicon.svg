@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="فلاح و پسران">
+  <title>فلاح و پسران</title>
+  <rect width="64" height="64" rx="14" fill="#173F35"/>
+  <path fill="#F6F1E7" d="M32 55C28.6 46.4 20.6 41.6 8.5 30.5C10.2 43.6 18.6 51.6 32 55Z"/>
+  <path fill="#F6F1E7" d="M32 55C35.4 46.4 43.4 41.6 55.5 30.5C53.8 43.6 45.4 51.6 32 55Z"/>
+  <ellipse cx="32" cy="27" rx="6.6" ry="16.5" fill="#B58A45"/>
+</svg>

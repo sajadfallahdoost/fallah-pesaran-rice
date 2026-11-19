@@ -1,0 +1,100 @@
+{% extends "admin/change_form.html" %}
+{% block object-tools-items %}
+  {% if fs_has_invoice %}<li><a href="{% url 'admin:orders_order_receipt' fs_order.pk %}" target="_blank">رسید PDF</a></li>{% endif %}
+  {{ block.super }}
+{% endblock %}
+{% block content %}
+{% with o=fs_order %}
+<section class="fs-ops" aria-label="عملیات سفارش">
+  <h2>عملیات سفارش {{ o.number }}</h2>
+  {% if o.is_test %}<p class="fs-alert">سفارش آزمایشی است (محصول نمونه یا درگاه آزمایشی) و در گزارش‌های فروش حساب نمی‌شود.</p>{% endif %}
+  {% if o.needs_review %}
+    <div class="fs-alert fs-alert-strong">
+      <strong>نیازمند بررسی:</strong> {{ o.review_reason }}
+      {% if fs_can_refund %}
+      <form method="post" action="{% url 'admin:orders_order_operate' o.pk 'resolve_review' %}" class="fs-inline-form">{% csrf_token %}
+        <label>اقدام انجام‌شده <input name="note" required class="vTextField"></label>
+        <button class="button">بستن مورد بررسی</button>
+      </form>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if fs_unresolved_payments %}
+  <form method="post" action="{% url 'admin:orders_order_operate' o.pk 'recheck_payment' %}" class="fs-inline-form">{% csrf_token %}
+    <span>پرداخت نامشخص یا باز دارد.</span><button class="button">استعلام مجدد از درگاه</button>
+  </form>
+  {% endif %}
+
+  <div class="fs-ops-grid">
+    {% if fs_can_fulfill and o.status == 'confirmed' %}
+    <div class="fs-op">
+      <h3>ارسال</h3>
+      <p>وضعیت فعلی: {{ o.get_fulfillment_status_display }}</p>
+      {% if 'preparing' in fs_next_steps %}
+        <form method="post" action="{% url 'admin:orders_order_operate' o.pk 'preparing' %}">{% csrf_token %}<button class="button default">شروع آماده‌سازی</button></form>
+      {% endif %}
+      {% if 'shipped' in fs_next_steps %}
+        <form method="post" action="{% url 'admin:orders_order_operate' o.pk 'shipped' %}" class="fs-stack">{% csrf_token %}
+          <label>شرکت حمل <input name="carrier" value="{{ o.shipping_method_name }}" class="vTextField"></label>
+          <label>کد رهگیری مرسوله <input name="tracking_code" class="vTextField" dir="ltr"></label>
+          <label>پیوند رهگیری (اختیاری) <input name="tracking_url" type="url" class="vTextField" dir="ltr"></label>
+          <button class="button default">ثبت ارسال</button>
+        </form>
+      {% endif %}
+      {% if 'delivered' in fs_next_steps %}
+        <form method="post" action="{% url 'admin:orders_order_operate' o.pk 'delivered' %}">{% csrf_token %}<button class="button default">تحویل شد</button></form>
+      {% endif %}
+      {% if 'returned' in fs_next_steps %}
+        <form method="post" action="{% url 'admin:orders_order_operate' o.pk 'returned' %}" class="fs-stack">{% csrf_token %}
+          <label>یادداشت مرجوعی <input name="note" class="vTextField"></label>
+          <button class="button">ثبت مرجوعی</button>
+        </form>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if fs_can_refund %}
+      {% if o.status != 'canceled' and o.status != 'expired' and o.fulfillment_status != 'shipped' and o.fulfillment_status != 'delivered' %}
+      <div class="fs-op">
+        <h3>لغو سفارش</h3>
+        <form method="post" action="{% url 'admin:orders_order_operate' o.pk 'cancel' %}" class="fs-stack" onsubmit="return confirm('سفارش لغو شود؟ موجودی رزرو/کسرشده برمی‌گردد.');">{% csrf_token %}
+          <label>علت لغو <input name="reason" required class="vTextField"></label>
+          <button class="button fs-danger">لغو سفارش</button>
+          {% if o.is_paid %}<p class="help">سفارش پرداخت‌شده است؛ پس از لغو، بازپرداخت را ثبت کنید.</p>{% endif %}
+        </form>
+      </div>
+      {% endif %}
+      {% if o.is_paid %}
+      <div class="fs-op">
+        <h3>بازپرداخت</h3>
+        <p>حداکثر قابل ثبت: {{ fs_refundable }}</p>
+        <form method="post" action="{% url 'admin:orders_order_operate' o.pk 'refund' %}" class="fs-stack">{% csrf_token %}
+          <label>مبلغ (تومان) <input name="amount" required inputmode="numeric" dir="ltr" class="vTextField"></label>
+          <label>علت <input name="reason" required class="vTextField"></label>
+          <label><input type="checkbox" name="restock"> کالا سالم برگشته و به موجودی اضافه شود (فقط بازپرداخت کامل)</label>
+          <button class="button">ثبت درخواست بازپرداخت</button>
+        </form>
+        {% for r in fs_refunds %}
+          {% if r.status == 'requested' or r.status == 'approved' %}
+          <div class="fs-refund">
+            <p>{{ r.reason }} — {{ r.get_status_display }}</p>
+            {% if r.status == 'requested' %}
+              <form method="post" action="{% url 'admin:orders_order_operate' o.pk 'refund_approved' %}" class="fs-inline-form">{% csrf_token %}<input type="hidden" name="refund_id" value="{{ r.pk }}"><button class="button">تأیید</button></form>
+            {% endif %}
+            <form method="post" action="{% url 'admin:orders_order_operate' o.pk 'refund_completed' %}" class="fs-inline-form">{% csrf_token %}<input type="hidden" name="refund_id" value="{{ r.pk }}">
+              {% if r.status == 'approved' %}<label>مرجع بانکی واریز <input name="external_reference" required dir="ltr" class="vTextField"></label><button class="button default">ثبت واریز</button>{% endif %}
+            </form>
+            <form method="post" action="{% url 'admin:orders_order_operate' o.pk 'refund_rejected' %}" class="fs-inline-form">{% csrf_token %}<input type="hidden" name="refund_id" value="{{ r.pk }}"><button class="button fs-danger">رد</button></form>
+          </div>
+          {% endif %}
+        {% endfor %}
+        <p class="help">ثبت بازپرداخت به معنای واریز پول نیست؛ فقط پس از واریز واقعی، مرجع بانکی را ثبت کنید.</p>
+      </div>
+      {% endif %}
+    {% endif %}
+  </div>
+</section>
+{% endwith %}
+{{ block.super }}
+{% endblock %}

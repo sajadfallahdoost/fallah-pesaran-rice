@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>رسید سفارش {{ order.number }}</title>
+<style>
+  @font-face { font-family: "Vazirmatn"; src: url("{{ font_dir }}/Vazirmatn-Regular.ttf"); font-weight: 400; }
+  @font-face { font-family: "Vazirmatn"; src: url("{{ font_dir }}/Vazirmatn-Bold.ttf"); font-weight: 700; }
+  @page { size: A4; margin: 16mm 14mm 18mm; @bottom-center { content: counter(page) " / " counter(pages); font-family: Vazirmatn; font-size: 8pt; color: #6B746F; } }
+  * { box-sizing: border-box; }
+  body { font-family: Vazirmatn, sans-serif; color: #202B26; font-size: 9.5pt; line-height: 1.7; direction: rtl; }
+  header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #173F35; padding-bottom: 8px; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand img { width: 46px; height: 46px; }
+  .brand h1 { font-size: 15pt; margin: 0; color: #173F35; }
+  .brand p { margin: 0; color: #4B5650; font-size: 8.5pt; }
+  .doc-title { text-align: left; }
+  .doc-title strong { display: block; font-size: 12pt; color: #173F35; }
+  .ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+  .grid { display: flex; gap: 12px; margin: 12px 0; }
+  .box { flex: 1; border: 1px solid #E2D9C6; border-radius: 6px; padding: 8px 10px; background: #FFFEFA; }
+  .box h2 { font-size: 9.5pt; margin: 0 0 4px; color: #173F35; }
+  .box p { margin: 0; }
+  table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  thead { display: table-header-group; }
+  tr { page-break-inside: avoid; }
+  th { background: #173F35; color: #fff; font-weight: 700; padding: 6px; font-size: 8.5pt; text-align: right; }
+  td { border-bottom: 1px solid #E2D9C6; padding: 6px; vertical-align: top; }
+  td.num, th.num { text-align: left; white-space: nowrap; }
+  .muted { color: #6B746F; font-size: 8pt; }
+  .totals { width: 55%; margin-right: auto; margin-top: 10px; }
+  .totals td { border: none; padding: 3px 6px; }
+  .totals tr.grand td { border-top: 2px solid #173F35; font-weight: 700; font-size: 11pt; color: #173F35; padding-top: 6px; }
+  .note { margin-top: 14px; padding: 8px 10px; border: 1px dashed #B58A45; border-radius: 6px; font-size: 8.5pt; color: #4B5650; }
+  .test { background: #FDF3E1; border: 1px solid #B58A45; padding: 6px 10px; border-radius: 6px; margin-top: 8px; font-weight: 700; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <img src="{{ logo_uri }}" alt="">
+    <div>
+      <h1>{{ store.store_name }}</h1>
+      <p>{{ store.address }}</p>
+    </div>
+  </div>
+  <div class="doc-title">
+    <strong>رسید سفارش</strong>
+    <span class="muted">شمارهٔ رسید: <span class="ltr">{{ invoice.number }}</span></span><br>
+    <span class="muted">تاریخ صدور: {{ issued_at }}</span>
+  </div>
+</header>
+
+{% if order.is_test %}<p class="test">سفارش آزمایشی — شامل محصول نمونه یا پرداخت شبیه‌سازی‌شده؛ معتبر برای فروش واقعی نیست.</p>{% endif %}
+
+<div class="grid">
+  <div class="box">
+    <h2>سفارش</h2>
+    <p>شمارهٔ سفارش: <span class="ltr">{{ order.number }}</span></p>
+    <p>تاریخ ثبت: {{ created_at }}</p>
+    <p>تاریخ پرداخت: {{ paid_at }}</p>
+    {% if payment_reference %}<p>مرجع پرداخت: <span class="ltr">{{ payment_reference }}</span></p>{% endif %}
+  </div>
+  <div class="box">
+    <h2>گیرنده و ارسال</h2>
+    <p>{{ order.full_name }} — <span class="ltr">{{ order.phone }}</span></p>
+    {% if order.address_line %}<p>{{ order.province_name }}، {{ order.city }}، {{ order.address_line }}</p>{% endif %}
+    {% if order.postal_code %}<p>کد پستی: <span class="ltr">{{ order.postal_code }}</span></p>{% endif %}
+    <p>روش ارسال: {{ order.shipping_method_name }}</p>
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr><th>کالا</th><th>بسته</th><th class="num">تعداد</th><th class="num">قیمت واحد</th><th class="num">تخفیف</th><th class="num">جمع</th></tr>
+  </thead>
+  <tbody>
+  {% for item in items %}
+    <tr>
+      <td>{{ item.name }}<br><span class="muted">{{ item.variant }} — <span class="ltr">{{ item.sku }}</span></span></td>
+      <td>{{ item.package }}</td>
+      <td class="num">{{ item.quantity }}</td>
+      <td class="num">{{ item.unit_price }}</td>
+      <td class="num">{{ item.discount }}</td>
+      <td class="num">{{ item.line_total }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<table class="totals">
+  <tr><td>جمع کالاها با قیمت اصلی</td><td class="num">{{ merchandise_total }}</td></tr>
+  <tr><td>تخفیف</td><td class="num">{{ discount_total }}</td></tr>
+  {% if order.tax_total %}<tr><td>مالیات</td><td class="num">{{ tax_total }}</td></tr>{% endif %}
+  <tr><td>هزینهٔ ارسال{% if order.shipping_on_delivery %} (پس‌کرایه، هنگام تحویل پرداخت می‌شود){% endif %}</td><td class="num">{{ shipping_total }}</td></tr>
+  <tr class="grand"><td>مبلغ پرداخت‌شده</td><td class="num">{{ grand_total }}</td></tr>
+</table>
+
+<p class="note">این سند رسید سفارش فروشگاه است و جایگزین صورت‌حساب رسمی مالیاتی (سامانهٔ مؤدیان) نیست. مبالغ به تومان است (هر تومان = ۱۰ ریال).
+تماس: <span class="ltr">{{ store.phone }}</span> — <span class="ltr">{{ store.email }}</span></p>
+</body>
+</html>

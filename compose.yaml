@@ -1,0 +1,84 @@
+# Production-style stack for Fallah & Sons. Usage: cp .env.production.example .env.production,
+# fill the values, then: docker compose --env-file .env.production up -d --build
+# Only nginx publishes a port, bound to localhost; put your TLS proxy in front of it.
+name: fallah-pesaran
+
+x-backend: &backend
+  image: fallah-pesaran/backend:local
+  env_file: .env.production
+  environment:
+    STORE_ENV: production
+    DJANGO_DEBUG: "false"
+    DATABASE_URL: postgres://${POSTGRES_USER:-fallah}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-fallah}
+    STOREFRONT_REVALIDATE_URL: http://frontend:3000/api/revalidate
+  volumes:
+    - media:/data/media
+  depends_on:
+    db:
+      condition: service_healthy
+  restart: unless-stopped
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fallah}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-fallah}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  backend:
+    <<: *backend
+    build: ./backend
+    command: ["web"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:8000/api/health/', headers={'Host': 'backend'}), timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  scheduler:
+    <<: *backend
+    command: ["scheduler"]
+    pull_policy: never
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_SITE_URL: ${PUBLIC_BASE_URL:?set PUBLIC_BASE_URL}
+    image: fallah-pesaran/frontend:local
+    environment:
+      BACKEND_INTERNAL_URL: http://backend:8000
+      MEDIA_INTERNAL_URL: http://nginx/media
+      STOREFRONT_REVALIDATE_SECRET: ${STOREFRONT_REVALIDATE_SECRET:?set STOREFRONT_REVALIDATE_SECRET}
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./infra/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - media:/data/media:ro
+    ports:
+      - "127.0.0.1:${HTTP_PORT:-8090}:80"
+    depends_on:
+      - frontend
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  media:

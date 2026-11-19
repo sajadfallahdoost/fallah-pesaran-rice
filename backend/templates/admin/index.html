@@ -1,0 +1,14 @@
+{% extends "admin/index.html" %}
+{% block content %}
+<section class="fs-dashboard" aria-label="خلاصهٔ امروز">
+  {% if fs_can_view_reports %}
+  <a class="fs-card" href="{% url 'sales-report' %}?preset=today"><span>سفارش پرداخت‌شدهٔ امروز</span><strong>{{ fs_today_orders }}</strong></a>
+  <a class="fs-card" href="{% url 'sales-report' %}?preset=today"><span>پرداخت تأییدشدهٔ امروز</span><strong>{{ fs_today_sales }}</strong></a>
+  <a class="fs-card" href="{% url 'sales-report' %}?preset=7d"><span>پرداخت ۷ روز اخیر</span><strong>{{ fs_week_sales }}</strong></a>
+  {% endif %}
+  <a class="fs-card" href="{% url 'admin:orders_order_changelist' %}?status__exact=confirmed&fulfillment_status__exact=unfulfilled"><span>سفارش منتظر ارسال</span><strong>{{ fs_awaiting_fulfillment }}</strong></a>
+  <a class="fs-card {% if fs_needs_review %}fs-card-alert{% endif %}" href="{% url 'admin:orders_order_changelist' %}?review=1"><span>نیازمند بررسی</span><strong>{{ fs_needs_review }}</strong></a>
+  <a class="fs-card {% if fs_low_stock %}fs-card-warn{% endif %}" href="{% url 'admin:catalog_productvariant_changelist' %}"><span>بستهٔ کم‌موجود</span><strong>{{ fs_low_stock }}</strong></a>
+</section>
+{{ block.super }}
+{% endblock %}

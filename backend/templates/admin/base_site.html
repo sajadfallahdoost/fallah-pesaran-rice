@@ -1,0 +1,23 @@
+{% extends "admin/base.html" %}
+{% load static %}
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:"مدیریت فلاح و پسران" }}{% endblock %}
+{% block extrahead %}
+  {{ block.super }}
+  <link rel="icon" href="{% static 'brand/favicon.svg' %}" type="image/svg+xml">
+  <meta name="robots" content="noindex, nofollow">
+{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/fallah-admin.css' %}">{% endblock %}
+{% block branding %}
+<div id="site-name">
+  <a href="{% url 'admin:index' %}" class="fs-brand">
+    <img src="{% static 'brand/fallah-emblem.svg' %}" alt="" width="34" height="29">
+    <span>{{ site_header|default:"پنل مدیریت فلاح و پسران" }}</span>
+  </a>
+</div>
+{% if user.is_anonymous %}{% include "admin/color_theme_toggle.html" %}{% endif %}
+{% endblock %}
+{% block nav-global %}
+  {% if user.is_staff and perms.orders.view_financial_reports %}
+    <a class="fs-nav-link" href="{% url 'sales-report' %}">گزارش فروش</a>
+  {% endif %}
+{% endblock %}

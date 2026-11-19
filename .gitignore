@@ -1,0 +1,39 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+!.env.production.example
+*.pem
+*.key
+
+# Private working material (not part of the product)
+rigor-os/
+fallah-and-sons-master-prompt.md
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+backend/staticfiles/
+backend/media/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Runtime data, dumps, generated documents
+*.sql
+*.dump
+*.sqlite3
+invoices/
+receipts/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/

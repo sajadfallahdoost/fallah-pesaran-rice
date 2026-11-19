@@ -1,0 +1,102 @@
+{% extends "admin/base_site.html" %}
+{% block breadcrumbs %}<div class="breadcrumbs"><a href="{% url 'admin:index' %}">خانه</a> › گزارش فروش و پرداخت</div>{% endblock %}
+{% block content %}
+<div class="fs-report">
+  <form method="get" class="fs-filter" aria-label="بازهٔ گزارش">
+    <div class="fs-presets">
+      {% with t=include_test|yesno:"&include_test=1," %}<a href="?preset=today{{ t }}">امروز</a><a href="?preset=7d{{ t }}">۷ روز</a><a href="?preset=30d{{ t }}">۳۰ روز</a><a href="?preset=90d{{ t }}">۹۰ روز</a>{% endwith %}
+    </div>
+    <label>از <input name="from" value="{{ start_label }}" placeholder="۱۴۰۵/۰۸/۰۱" inputmode="numeric" dir="ltr"></label>
+    <label>تا <input name="to" value="{{ end_label }}" placeholder="۱۴۰۵/۰۸/۳۰" inputmode="numeric" dir="ltr"></label>
+    <label class="fs-check"><input type="checkbox" name="include_test" value="1" {% if include_test %}checked{% endif %}> شامل سفارش‌های آزمایشی</label>
+    <button type="submit" class="button">نمایش</button>
+    <span class="fs-hint">تاریخ‌ها شمسی و بر اساس روز کاری تهران‌اند.</span>
+  </form>
+
+  {% if include_test %}
+  <p class="fs-alert fs-alert-strong">این گزارش سفارش‌های آزمایشی (درگاه آزمایشی یا محصول نمونه) را هم شامل می‌شود و فروش واقعی نیست.</p>
+  {% endif %}
+  <p class="fs-range">بازه: {{ start_label }} تا {{ end_label }} — {% if include_test %}همهٔ سفارش‌های پرداخت‌شده، از جمله آزمایشی.{% else %}فقط سفارش‌های پرداخت‌شدهٔ واقعی (سفارش‌های آزمایشی و نمونه حساب نمی‌شوند).{% endif %}</p>
+
+  <section class="fs-cards">
+    <div class="fs-card"><span>سفارش پرداخت‌شده</span><strong>{{ summary.paid_orders }}</strong></div>
+    <div class="fs-card"><span>فروش ناخالص کالا</span><strong>{{ money.gross_merchandise }}</strong></div>
+    <div class="fs-card"><span>تخفیف</span><strong>{{ money.discounts }}</strong></div>
+    <div class="fs-card"><span>بازپرداخت انجام‌شده</span><strong>{{ money.refunds }}</strong></div>
+    <div class="fs-card fs-primary"><span>فروش خالص کالا</span><strong>{{ money.net_sales }}</strong></div>
+    <div class="fs-card"><span>ارسال دریافتی</span><strong>{{ money.shipping }}</strong></div>
+    <div class="fs-card"><span>مالیات ثبت‌شده</span><strong>{{ money.tax }}</strong></div>
+    <div class="fs-card"><span>پرداخت تأییدشدهٔ مشتریان</span><strong>{{ money.customer_payments }}</strong></div>
+    <div class="fs-card"><span>میانگین مبلغ سفارش</span><strong>{{ money.average_order_value }}</strong></div>
+  </section>
+  <p class="fs-hint">فروش خالص = فروش ناخالص کالا − تخفیف − بازپرداخت‌های انجام‌شده در بازه. سود نمایش داده نمی‌شود چون بهای تمام‌شده ثبت نشده است. «پرداخت تأییدشده» به معنای تسویهٔ بانکی به حساب فروشگاه نیست.</p>
+
+  <section class="fs-panel">
+    <h2>روند {% if monthly %}ماهانه{% else %}روزانه{% endif %}</h2>
+    {% if trend %}
+    <table class="fs-trend">
+      <thead><tr><th>تاریخ</th><th>سفارش</th><th>فروش کالا</th><th>پرداخت</th><th aria-hidden="true"></th></tr></thead>
+      <tbody>
+      {% for row in trend %}
+        <tr><td>{{ row.label }}</td><td>{{ row.orders }}</td><td>{{ row.sales_display }}</td><td>{{ row.paid_display }}</td>
+          <td class="fs-bar-cell" aria-hidden="true"><span class="fs-bar" style="inline-size: {{ row.bar }}%"></span></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p class="fs-empty">در این بازه سفارش پرداخت‌شده‌ای ثبت نشده است.</p>{% endif %}
+  </section>
+
+  <div class="fs-columns">
+    <section class="fs-panel">
+      <h2>پرفروش‌ترین بسته‌ها</h2>
+      {% if top_products %}<table><thead><tr><th>محصول</th><th>تعداد</th><th>مبلغ</th></tr></thead><tbody>
+      {% for p in top_products %}<tr><td>{{ p.product_name }} — {{ p.variant_title }}</td><td>{{ p.quantity }}</td><td>{{ p.revenue_display }}</td></tr>{% endfor %}
+      </tbody></table>{% else %}<p class="fs-empty">داده‌ای نیست.</p>{% endif %}
+    </section>
+    <section class="fs-panel">
+      <h2>فروش دسته‌بندی‌ها</h2>
+      {% if categories %}<table><thead><tr><th>دسته</th><th>تعداد</th><th>مبلغ</th></tr></thead><tbody>
+      {% for c in categories %}<tr><td>{{ c.category|default:"(حذف‌شده)" }}</td><td>{{ c.quantity }}</td><td>{{ c.revenue_display }}</td></tr>{% endfor %}
+      </tbody></table>{% else %}<p class="fs-empty">داده‌ای نیست.</p>{% endif %}
+    </section>
+  </div>
+
+  <div class="fs-columns">
+    <section class="fs-panel">
+      <h2>تلاش‌های پرداخت (بر اساس زمان ایجاد)</h2>
+      <table><thead><tr><th>وضعیت</th><th>تعداد</th><th>مبلغ</th></tr></thead><tbody>
+      {% for a in attempts_by_status %}<tr><td>{{ a.label }}</td><td>{{ a.count }}</td><td>{{ a.amount }}</td></tr>{% endfor %}
+      </tbody></table>
+    </section>
+    <section class="fs-panel">
+      <h2>استثناهای پرداخت (نیازمند تطبیق)</h2>
+      {% if payment_exceptions %}<table><thead><tr><th>سفارش</th><th>درگاه</th><th>وضعیت</th><th>مرجع</th></tr></thead><tbody>
+      {% for a in payment_exceptions %}<tr><td><a href="{% url 'admin:orders_order_change' a.order_id %}">{{ a.order.number }}</a></td><td>{{ a.provider }}</td><td>{{ a.get_status_display }}{% if a.status == 'succeeded' and not a.applied_to_order %} (پرداخت اضافه){% endif %}</td><td dir="ltr">{{ a.reference_number|default:"—" }}</td></tr>{% endfor %}
+      </tbody></table>{% else %}<p class="fs-empty">موردی نیست.</p>{% endif %}
+    </section>
+  </div>
+
+  <div class="fs-columns">
+    <section class="fs-panel">
+      <h2>سفارش‌های نیازمند بررسی</h2>
+      {% if review_orders %}<ul class="fs-list">{% for o in review_orders %}<li><a href="{% url 'admin:orders_order_change' o.pk %}">{{ o.number }}</a> — {{ o.review_reason }}</li>{% endfor %}</ul>
+      {% else %}<p class="fs-empty">موردی نیست.</p>{% endif %}
+    </section>
+    <section class="fs-panel">
+      <h2>موجودی کم یا تمام‌شده</h2>
+      {% if low_stock %}<ul class="fs-list">{% for v in low_stock %}<li><a href="{% url 'admin:catalog_product_change' v.product_id %}">{{ v.product.name }} — {{ v.title }}</a>: {{ v.stock }} بسته</li>{% endfor %}</ul>
+      {% else %}<p class="fs-empty">همهٔ بسته‌ها موجودی کافی دارند.</p>{% endif %}
+    </section>
+  </div>
+
+  <section class="fs-panel">
+    <h2>خروجی CSV</h2>
+    <p>
+      <a class="button" href="{% url 'sales-report-export' 'summary' %}?{{ query }}">خلاصهٔ مالی</a>
+      <a class="button" href="{% url 'sales-report-export' 'orders' %}?{{ query }}">سفارش‌های پرداخت‌شده</a>
+      <a class="button" href="{% url 'sales-report-export' 'order-lines' %}?{{ query }}">اقلام فروخته‌شده</a>
+    </p>
+    <p class="fs-hint">مبالغ خروجی به ریال است.</p>
+  </section>
+</div>
+{% endblock %}
