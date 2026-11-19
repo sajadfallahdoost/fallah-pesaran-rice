@@ -128,6 +128,10 @@ export function CheckoutForm() {
       setProvinces(provinceList);
       setProviders(providerList);
       setProvider((providerList.find((p) => p.is_default) ?? providerList[0])?.code ?? "");
+      const tehran = provinceList.find((p) => p.name === "تهران");
+      const tehranDefaults = tehran
+        ? { province_id: String(tehran.id), city: "تهران" }
+        : { province_id: "", city: "تهران" };
       if (me.authenticated && me.phone) {
         setSignedInPhone(me.phone);
         const saved = await api<Address[]>("/account/addresses/").catch(() => []);
@@ -147,8 +151,10 @@ export function CheckoutForm() {
                 postal_code: preferred.postal_code,
                 save_address: false,
               }
-            : {}),
+            : tehranDefaults),
         }));
+      } else {
+        setForm((current) => ({ ...current, ...tehranDefaults }));
       }
     })();
     return () => {
