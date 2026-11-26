@@ -35,6 +35,8 @@ CATEGORIES = [
         "image": "category-rice.webp",
         "image_alt": "دانه‌های برنج سفید در کاسهٔ سفالی کنار خوشهٔ برنج",
         "sort_order": 1,
+        "seo_title": "خرید برنج ایرانی",
+        "seo_description": "خرید برنج ایرانی با نمایش قیمت هر بسته و هر کیلو؛ انتخاب وزن مناسب و مشاهدهٔ هزینهٔ ارسال پیش از پرداخت.",
     },
     {
         "slug": "tea",
@@ -43,6 +45,8 @@ CATEGORIES = [
         "image": "category-tea.webp",
         "image_alt": "استکان چای کنار قوری و برگ‌های خشک چای",
         "sort_order": 2,
+        "seo_title": "خرید چای ایرانی",
+        "seo_description": "چای سیاه ایرانی برای دم روزانه؛ بسته‌بندی مشخص و قیمت شفاف در فروشگاه فلاح و پسران.",
     },
     {
         "slug": "olive-oil",
@@ -51,6 +55,8 @@ CATEGORIES = [
         "image": "category-olive-oil.webp",
         "image_alt": "بطری شیشه‌ای روغن زیتون کنار زیتون سبز",
         "sort_order": 3,
+        "seo_title": "خرید روغن زیتون",
+        "seo_description": "روغن زیتون در بطری شیشه‌ای؛ مقایسهٔ حجم و قیمت و تکمیل مشخصات پس از تأیید مالک فروشگاه.",
     },
 ]
 
@@ -143,12 +149,22 @@ PAGES = [
         "slug": "about",
         "title": "دربارهٔ فلاح و پسران",
         "summary": "فروشگاه آنلاین برنج ایرانی، چای و روغن زیتون.",
+        "seo_title": "دربارهٔ فلاح و پسران",
+        "seo_description": "آشنایی با فروشگاه فلاح و پسران: خرید برنج ایرانی، چای و روغن زیتون با قیمت شفاف و پیگیری سفارش.",
         "body": (
-            "فلاح و پسران فروشگاه آنلاین برنج ایرانی و چند خوراکی برگزیده برای سفرهٔ خانواده است.\n\n"
+            "فلاح و پسران فروشگاه آنلاین برنج ایرانی و چند خوراکی برگزیده برای سفرهٔ خانواده است. "
+            "هدف این فروشگاه، خرید شفاف است: مشخصات قابل‌مشاهده، قیمت بسته در کنار قیمت هر کیلو، "
+            "و هزینهٔ ارسال پیش از پرداخت.\n\n"
             "## آنچه در این فروشگاه می‌بینید\n"
-            "قیمت هر بسته و قیمت هر کیلو را کنار هم می‌بینید، هزینهٔ ارسال پیش از پرداخت مشخص است "
-            "و وضعیت سفارش را با شمارهٔ سفارش پیگیری می‌کنید.\n\n"
-            "## تماس\nبرای پرسش دربارهٔ محصولات یا سفارش از صفحهٔ تماس با ما با ما در ارتباط باشید."
+            "دسته‌های برنج، چای و روغن زیتون، راهنماهای کوتاه خرید، پرسش‌های متداول و پیگیری سفارش "
+            "با شمارهٔ سفارش و شمارهٔ همراه.\n\n"
+            "## هویت برند\n"
+            "نام تجاری این فروشگاه «فلاح و پسران» و دامنهٔ نهایی fallah-rice.ir است. "
+            "جزئیات بیشتر دربارهٔ افراد مرتبط با برند تنها پس از تأیید مالک در همین صفحه درج می‌شود "
+            "و تا آن زمان چیزی به صورت حدسی نوشته نمی‌شود.\n\n"
+            "## تماس\n"
+            "برای پرسش دربارهٔ محصولات یا سفارش از صفحهٔ تماس با ما اقدام کنید. "
+            "نشانی عمومی اعلام‌شده: تهران، میرداماد، میدان مادر."
         ),
     },
     {
@@ -207,6 +223,8 @@ FAQS = [
     ("برای خرید باید ثبت‌نام کنم؟", "خیر. می‌توانید بدون ورود خرید کنید. با ورود از طریق شمارهٔ همراه، سفارش‌ها و نشانی‌هایتان ذخیره می‌شود.", "خرید"),
     ("سفارشم را چطور پیگیری کنم؟", "در صفحهٔ پیگیری سفارش، شمارهٔ سفارش و شمارهٔ همراهی را که هنگام خرید وارد کردید بنویسید.", "سفارش"),
     ("اگر پرداخت ناموفق شد چه کنم؟", "اگر مبلغی از حساب شما کم نشده، از صفحهٔ سفارش دوباره پرداخت کنید. اگر مبلغ کم شده ولی سفارش تأیید نشده، دوباره پرداخت نکنید و با شمارهٔ سفارش با ما تماس بگیرید.", "پرداخت"),
+    ("چطور برنج مناسب انتخاب کنم؟", "رقم، وزن بسته و قیمت هر کیلو را در صفحهٔ محصول ببینید. برای نکات بیشتر، راهنمای خرید برنج و صفحهٔ تشخیص کیفیت را بخوانید.", "خرید"),
+    ("آیا خرید قسطی دارید؟", "در حال حاضر خرید قسطی در این فروشگاه فعال اعلام نشده است. اگر این خدمت اضافه شود، در صفحهٔ محصول یا تکمیل خرید مشخص خواهد شد.", "خرید"),
 ]  # fmt: skip
 
 PROVIDERS = [
@@ -234,7 +252,7 @@ class Command(BaseCommand):
             raise CommandError("در محیط تولید فقط با --no-samples اجرا کنید.")
         self.created: list[str] = []
         with transaction.atomic():
-            StoreSettings.load()
+            self.seed_store_settings()
             self.seed_provinces()
             categories = self.seed_categories()
             self.seed_pages()
@@ -256,6 +274,22 @@ class Command(BaseCommand):
         with path.open("rb") as fh:
             field.save(filename, File(fh), save=False)
 
+    def seed_store_settings(self):
+        store = StoreSettings.load()
+        changed = []
+        if not store.seo_title:
+            store.seo_title = "فلاح و پسران | خرید آنلاین برنج ایرانی، چای و روغن زیتون"
+            changed.append("seo_title")
+        if not store.seo_description:
+            store.seo_description = (
+                "فروشگاه آنلاین فلاح و پسران: برنج ایرانی با قیمت هر کیلو، چای و روغن زیتون؛ "
+                "هزینهٔ ارسال پیش از پرداخت مشخص است."
+            )
+            changed.append("seo_description")
+        if changed:
+            store.save(update_fields=changed)
+            self.created.append("سئوی صفحهٔ اصلی (در صورت خالی بودن)")
+
     def seed_provinces(self):
         for index, name in enumerate(PROVINCES):
             _, created = Province.objects.get_or_create(name=name, defaults={"sort_order": index})
@@ -274,18 +308,43 @@ class Command(BaseCommand):
                     image_alt=spec["image_alt"],
                     sort_order=spec["sort_order"],
                     show_when_empty=True,
+                    seo_title=spec["seo_title"],
+                    seo_description=spec["seo_description"],
                 )
                 self._image(category.image, spec["image"])
                 category.save()
                 self.created.append(f"دسته {category.name}")
+            else:
+                fields = []
+                if not category.seo_title:
+                    category.seo_title = spec["seo_title"]
+                    fields.append("seo_title")
+                if not category.seo_description:
+                    category.seo_description = spec["seo_description"]
+                    fields.append("seo_description")
+                if fields:
+                    category.save(update_fields=[*fields, "updated_at"])
+                    self.created.append(f"سئوی دسته {category.name}")
             result[spec["slug"]] = category
         return result
 
     def seed_pages(self):
         for spec in PAGES:
-            _, created = Page.objects.get_or_create(slug=spec["slug"], defaults={**spec, "requires_owner_review": True})
-            if created:
+            page = Page.objects.filter(slug=spec["slug"]).first()
+            if page is None:
+                Page.objects.create(**spec, requires_owner_review=True)
                 self.created.append(f"صفحه {spec['title']}")
+                continue
+            fields = []
+            if not page.seo_title and spec.get("seo_title"):
+                page.seo_title = spec["seo_title"]
+                fields.append("seo_title")
+            if not page.seo_description and spec.get("seo_description"):
+                page.seo_description = spec["seo_description"]
+                fields.append("seo_description")
+            if fields:
+                page.save(update_fields=[*fields, "updated_at"])
+                self.created.append(f"سئوی صفحه {page.title}")
 
     def seed_faqs(self):
         for index, (question, answer, group) in enumerate(FAQS):

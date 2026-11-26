@@ -1,0 +1,94 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+
+import { Breadcrumbs, RichText } from "@/components/catalog";
+import { getGuide, listGuides } from "@/content/guides";
+import { jalaliDate } from "@/lib/format";
+import { absoluteUrl, jsonLd } from "@/lib/seo";
+
+export function generateStaticParams() {
+  return listGuides().map((guide) => ({ slug: guide.slug }));
+}
+
+export async function generateMetadata({ params }: PageProps<"/guides/[slug]">): Promise<Metadata> {
+  const { slug } = await params;
+  const guide = getGuide(slug);
+  if (!guide) return { title: "راهنما" };
+  return {
+    title: guide.seoTitle,
+    description: guide.seoDescription,
+    alternates: { canonical: `/guides/${guide.slug}` },
+    openGraph: {
+      type: "article",
+      title: guide.seoTitle,
+      description: guide.seoDescription,
+      publishedTime: guide.publishedAt,
+      modifiedTime: guide.updatedAt,
+    },
+  };
+}
+
+export default async function GuidePage({ params }: PageProps<"/guides/[slug]">) {
+  const { slug } = await params;
+  const guide = getGuide(slug);
+  if (!guide) notFound();
+
+  const article = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: guide.title,
+    description: guide.description,
+    datePublished: guide.publishedAt,
+    dateModified: guide.updatedAt,
+    inLanguage: "fa-IR",
+    mainEntityOfPage: absoluteUrl(`/guides/${guide.slug}`),
+    author: { "@type": "Organization", name: "فلاح و پسران" },
+    publisher: {
+      "@type": "Organization",
+      name: "فلاح و پسران",
+      logo: { "@type": "ImageObject", url: absoluteUrl("/brand/icon-512.png") },
+    },
+  };
+
+  const crumbs = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "خانه", item: absoluteUrl("/") },
+      { "@type": "ListItem", position: 2, name: "راهنماها", item: absoluteUrl("/guides") },
+      { "@type": "ListItem", position: 3, name: guide.title },
+    ],
+  };
+
+  return (
+    <>
+      <div className="border-b border-line bg-cream/60">
+        <div className="container-page py-8 sm:py-10">
+          <Breadcrumbs items={[{ href: "/guides", label: "راهنماها" }, { label: guide.title }]} />
+          <p className="mt-4 text-sm font-semibold text-gold-700">{guide.cluster}</p>
+          <h1 className="mt-2 text-2xl font-extrabold text-green-800 sm:text-3xl">{guide.title}</h1>
+          <p className="mt-3 max-w-2xl leading-8 text-ink-soft">{guide.description}</p>
+        </div>
+      </div>
+      <article className="container-page max-w-3xl py-10">
+        <RichText text={guide.body} />
+        <nav aria-label="پیوندهای مرتبط" className="mt-12 rounded-[var(--radius-card)] bg-cream/70 p-6">
+          <h2 className="text-lg font-bold text-green-800">ادامهٔ مسیر خرید</h2>
+          <ul className="mt-4 space-y-2">
+            {guide.relatedPaths.map((link) => (
+              <li key={link.href}>
+                <Link href={link.href} className="font-semibold text-green-800 underline underline-offset-4">
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <p className="mt-8 text-xs text-ink-muted">آخرین به‌روزرسانی: {jalaliDate(guide.updatedAt)}</p>
+      </article>
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(article)} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(crumbs)} />
+    </>
+  );
+}

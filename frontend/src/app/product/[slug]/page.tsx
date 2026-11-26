@@ -164,7 +164,9 @@ async function ProductContent({ params }: { params: PageProps<"/product/[slug]">
         </section>
       )}
 
-      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(productJsonLd(product))} />
+      {!product.is_sample && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(productJsonLd(product))} />
+      )}
     </>
   );
 }

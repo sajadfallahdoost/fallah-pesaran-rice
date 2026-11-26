@@ -74,6 +74,7 @@ unfinished payments and expire unpaid orders.
 - [Design system](docs/DESIGN_SYSTEM.md), [brand usage](docs/BRAND.md), [image assets](docs/ASSETS.md)
 - [Decisions and assumptions](docs/DECISIONS.md)
 - [Reference research](docs/REFERENCE_RESEARCH.md)
+- [سئو، نقشهٔ کلمات و برنامهٔ رشد](docs/SEO.md)
 - [راهنمای فارسی مدیریت فروشگاه](docs/STORE_OWNER_GUIDE_FA.md)
 - [Third-party notices](THIRD_PARTY_NOTICES.md)
 

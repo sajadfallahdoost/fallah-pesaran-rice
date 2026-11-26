@@ -34,6 +34,7 @@ class CategorySerializer(serializers.ModelSerializer):
             "show_in_navigation",
             "seo_title",
             "seo_description",
+            "updated_at",
         )
 
     def get_image(self, obj):
@@ -124,6 +125,7 @@ class ProductCardSerializer(serializers.ModelSerializer):
             "price_from",
             "in_stock",
             "variant_count",
+            "updated_at",
         )
 
     def get_category(self, obj):

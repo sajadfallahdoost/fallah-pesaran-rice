@@ -48,6 +48,7 @@ export interface Category {
   product_count: number;
   seo_title?: string;
   seo_description?: string;
+  updated_at?: string;
 }
 
 export interface UnitPrice {
@@ -74,6 +75,7 @@ export interface ProductCard {
   price_from: PriceFrom | null;
   in_stock: boolean;
   variant_count: number;
+  updated_at?: string;
 }
 
 export interface Variant {

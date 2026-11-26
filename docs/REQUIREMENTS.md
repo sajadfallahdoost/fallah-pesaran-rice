@@ -59,7 +59,7 @@ Confirmed business data (from the owner): name, address «تهران، میرد�
 | Reports + CSV (formula-injection safe) | Done, tested |
 | Staff roles (owner, order operator, catalog editor) | Done, tested |
 | SMS login | Done; real SMS provider needed |
-| SEO: metadata, Open Graph, JSON-LD, sitemap, robots | Done |
+| SEO: metadata, Open Graph, JSON-LD, sitemap, robots, guides | Done (see [SEO.md](SEO.md); live domain indexing pending) |
 | Docker Compose, CI, docs, owner guide | Done |
 | Deployed on a real domain with HTTPS | Not done: no hosting access |
 | Live payment test | Not done: no merchant credentials |

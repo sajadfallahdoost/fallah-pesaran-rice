@@ -37,6 +37,10 @@ const nextConfig: NextConfig = {
       fallback: [],
     };
   },
+  async redirects() {
+    // CMS also has an "about" page; the public URL is /about to avoid duplicate content.
+    return [{ source: "/info/about", destination: "/about", permanent: true }];
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

@@ -25,6 +25,7 @@ export function Logo({ compact = false }: { compact?: boolean }) {
 
 const STATIC_LINKS = [
   { href: "/shop", label: "همهٔ محصولات" },
+  { href: "/guides", label: "راهنما" },
   { href: "/about", label: "دربارهٔ ما" },
   { href: "/contact", label: "تماس" },
 ];
@@ -168,6 +169,11 @@ export async function Footer() {
           <h2 className="text-sm font-bold text-gold-200">راهنما</h2>
           <ul className="mt-4 space-y-1.5 text-sm">
             <li>
+              <Link className="inline-block py-1 hover:text-rice hover:underline" href="/guides">
+                راهنمای خرید
+              </Link>
+            </li>
+            <li>
               <Link className="inline-block py-1 hover:text-rice hover:underline" href="/faq">
                 پرسش‌های متداول
               </Link>
@@ -184,6 +190,11 @@ export async function Footer() {
             <li>
               <Link className="inline-block py-1 hover:text-rice hover:underline" href="/about">
                 دربارهٔ ما
+              </Link>
+            </li>
+            <li>
+              <Link className="inline-block py-1 hover:text-rice hover:underline" href="/contact">
+                تماس با ما
               </Link>
             </li>
           </ul>

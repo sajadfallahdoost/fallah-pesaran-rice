@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { PageIntro, ProductGridSkeleton } from "@/components/catalog";
 import { ListingFilters, ProductListing, readListingParams } from "@/components/product-listing";
 import { getCategory, NotFoundError } from "@/lib/api-server";
+import { listingRobots } from "@/lib/seo";
 
 async function loadCategory(slug: string) {
   try {
@@ -15,8 +16,12 @@ async function loadCategory(slug: string) {
   }
 }
 
-export async function generateMetadata({ params }: PageProps<"/category/[slug]">): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: PageProps<"/category/[slug]">): Promise<Metadata> {
   const { slug } = await params;
+  const listing = readListingParams(await searchParams);
   const category = await getCategory(slug).catch(() => null);
   if (!category) return { title: "دسته‌بندی" };
   return {
@@ -24,6 +29,7 @@ export async function generateMetadata({ params }: PageProps<"/category/[slug]">
     description: category.seo_description || category.description,
     alternates: { canonical: `/category/${category.slug}` },
     openGraph: category.image ? { images: [{ url: category.image, alt: category.image_alt }] } : undefined,
+    robots: listingRobots(listing),
   };
 }
 

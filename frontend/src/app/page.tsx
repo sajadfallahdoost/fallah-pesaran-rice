@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image, { getImageProps } from "next/image";
 import Link from "next/link";
 import { connection } from "next/server";
@@ -7,8 +8,20 @@ import { ProductGrid, ProductGridSkeleton } from "@/components/catalog";
 import { FaqList } from "@/components/faq-list";
 import { ChevronLeftIcon, PackageIcon, ScaleIcon, ShieldIcon, TruckIcon } from "@/components/icons";
 import { getHome, getSite } from "@/lib/api-server";
-import { absoluteUrl, jsonLd } from "@/lib/seo";
+import { jsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import type { Banner } from "@/lib/types";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const site = await getSite().catch(() => null);
+  const store = site?.store;
+  return {
+    ...(store?.seo_title ? { title: { absolute: store.seo_title } } : {}),
+    description:
+      store?.seo_description ||
+      "فروشگاه آنلاین فلاح و پسران: برنج ایرانی در بسته‌های خانوادگی با قیمت هر کیلو، چای و روغن زیتون؛ هزینهٔ ارسال پیش از پرداخت مشخص است.",
+    alternates: { canonical: "/" },
+  };
+}
 
 const PROMISES = [
   {
@@ -107,18 +120,8 @@ async function HomeContent() {
   await connection();
   const [home, site] = await Promise.all([getHome(), getSite()]);
   const banner = home.banners[0];
-  const organization = {
-    "@context": "https://schema.org",
-    "@type": "Store",
-    name: site.store.name,
-    url: absoluteUrl("/"),
-    logo: absoluteUrl("/brand/icon-512.png"),
-    image: absoluteUrl("/brand/og-image.png"),
-    email: site.store.email,
-    telephone: `+98${site.store.phone.replace(/^0/, "")}`,
-    address: { "@type": "PostalAddress", streetAddress: site.store.address, addressCountry: "IR" },
-    sameAs: [`https://t.me/${site.store.telegram_username}`],
-  };
+  const organization = organizationJsonLd(site.store);
+  const website = websiteJsonLd(site.store);
 
   return (
     <>
@@ -228,18 +231,63 @@ async function HomeContent() {
             </h2>
             <p className="mt-4 leading-8 text-ink-soft">
               برای هر بسته، وزن، قیمت بسته و قیمت هر کیلو را کنار هم نشان می‌دهیم تا مقایسه ساده باشد. اطلاعات رقم،
-              منطقهٔ کشت و سال برداشت هر محصول در صفحهٔ همان محصول درج می‌شود.
+              منطقهٔ کشت و سال برداشت هر محصول در صفحهٔ همان محصول درج می‌شود. برای نکات انتخاب و تشخیص کیفیت،
+              راهنماهای خرید را هم بخوانید.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link href="/category/rice" className="btn btn-primary">
                 مشاهدهٔ برنج‌ها
               </Link>
-              <Link href="/faq" className="btn btn-secondary">
-                پرسش‌های متداول
+              <Link href="/guides/kharid-berenj-irani" className="btn btn-secondary">
+                راهنمای خرید
               </Link>
             </div>
           </div>
         </div>
+      </section>
+
+      <section aria-labelledby="guides-title" className="container-page pt-16">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-gold-700">آموزش و انتخاب</p>
+            <h2 id="guides-title" className="mt-1 text-2xl font-extrabold text-green-800 sm:text-3xl">
+              راهنماهای کوتاه خرید
+            </h2>
+          </div>
+          <Link href="/guides" className="btn btn-ghost px-3 text-sm">
+            همه
+            <ChevronLeftIcon size={16} />
+          </Link>
+        </div>
+        <ul className="mt-8 grid gap-4 sm:grid-cols-3">
+          {[
+            {
+              href: "/guides/kharid-berenj-irani",
+              title: "خرید برنج ایرانی",
+              text: "مقایسهٔ بسته، قیمت هر کیلو و هزینهٔ ارسال.",
+            },
+            {
+              href: "/guides/tashkhis-keyfiyat-berenj",
+              title: "تشخیص کیفیت",
+              text: "ظاهر، عطر، یکدستی دانه و آزمون پخت.",
+            },
+            {
+              href: "/guides/tafavot-anvae-berenj",
+              title: "تفاوت ارقام",
+              text: "مرور کاربردی هاشمی، طارم، دمسیاه و گزینه‌های روزمره.",
+            },
+          ].map((item) => (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                className="block h-full rounded-[var(--radius-card)] border border-line bg-white p-5 transition-shadow hover:shadow-[var(--shadow-card)]"
+              >
+                <span className="block font-bold text-green-800">{item.title}</span>
+                <span className="mt-2 block text-sm leading-7 text-ink-soft">{item.text}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </section>
 
       {home.faqs.length > 0 && (
@@ -261,6 +309,7 @@ async function HomeContent() {
       )}
 
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(organization)} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(website)} />
     </>
   );
 }

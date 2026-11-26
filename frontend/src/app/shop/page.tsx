@@ -3,12 +3,17 @@ import { Suspense } from "react";
 
 import { PageIntro, ProductGridSkeleton } from "@/components/catalog";
 import { ListingFilters, ProductListing, readListingParams } from "@/components/product-listing";
+import { listingRobots } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "همهٔ محصولات",
-  description: "خرید آنلاین برنج ایرانی، چای و روغن زیتون با نمایش قیمت هر کیلو و هزینهٔ ارسال پیش از پرداخت.",
-  alternates: { canonical: "/shop" },
-};
+export async function generateMetadata({ searchParams }: PageProps<"/shop">): Promise<Metadata> {
+  const params = readListingParams(await searchParams);
+  return {
+    title: "همهٔ محصولات",
+    description: "خرید آنلاین برنج ایرانی، چای و روغن زیتون با نمایش قیمت هر کیلو و هزینهٔ ارسال پیش از پرداخت.",
+    alternates: { canonical: "/shop" },
+    robots: listingRobots(params),
+  };
+}
 
 async function Listing({ searchParams }: { searchParams: PageProps<"/shop">["searchParams"] }) {
   const params = readListingParams(await searchParams);

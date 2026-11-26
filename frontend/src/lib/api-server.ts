@@ -64,6 +64,7 @@ export interface ProductQuery {
   sort?: string;
   in_stock?: string;
   page?: string;
+  page_size?: string;
 }
 
 export async function getProducts(query: ProductQuery): Promise<Paginated<ProductCard>> {

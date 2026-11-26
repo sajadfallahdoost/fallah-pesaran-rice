@@ -7,6 +7,7 @@ import { PageIntro } from "@/components/catalog";
 import { MailIcon, PhoneIcon, PinIcon, TelegramIcon } from "@/components/icons";
 import { getSite } from "@/lib/api-server";
 import { PHONE_DISPLAY, PHONE_HREF } from "@/lib/format";
+import { jsonLd, organizationJsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "تماس با ما",
@@ -19,6 +20,7 @@ async function ContactCards() {
   const site = await getSite().catch(() => null);
   if (!site) return <p className="text-ink-soft">اطلاعات تماس بارگذاری نشد. کمی بعد دوباره تلاش کنید.</p>;
   const { store } = site;
+  const organization = organizationJsonLd(store);
   const cards = [
     {
       icon: PhoneIcon,
@@ -82,8 +84,13 @@ async function ContactCards() {
         <Link href="/track" className="font-semibold text-green-800 underline">
           پیگیری سفارش
         </Link>{" "}
-        استفاده کنید.
+        استفاده کنید. برای راهنمای انتخاب محصول هم می‌توانید{" "}
+        <Link href="/guides" className="font-semibold text-green-800 underline">
+          راهنماهای خرید
+        </Link>{" "}
+        را بخوانید.
       </p>
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(organization)} />
     </>
   );
 }
