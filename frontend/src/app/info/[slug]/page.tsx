@@ -12,6 +12,7 @@ export async function generateMetadata({ params }: PageProps<"/info/[slug]">): P
     title: page.seo_title || page.title,
     description: page.seo_description || page.summary,
     alternates: { canonical: `/info/${page.slug}` },
+    robots: page.requires_owner_review ? { index: false, follow: true } : undefined,
   };
 }
 

@@ -36,7 +36,7 @@ class SiteView(APIView):
         nav = [
             c for c in categories_with_counts().filter(show_in_navigation=True) if c.product_count or c.show_when_empty
         ]
-        pages = Page.objects.filter(is_published=True).values("slug", "title")
+        pages = Page.objects.filter(is_published=True).values("slug", "title", "requires_owner_review", "updated_at")
         return Response(
             {
                 "store": store_payload(StoreSettings.load()),

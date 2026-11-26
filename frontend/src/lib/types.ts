@@ -29,6 +29,8 @@ export interface NavCategory {
 export interface PageLink {
   slug: string;
   title: string;
+  requires_owner_review?: boolean;
+  updated_at?: string;
 }
 
 export interface SiteData {

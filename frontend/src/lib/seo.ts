@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import type { StoreInfo } from "@/lib/types";
 
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3010").replace(/\/$/, "");
+export const INSTAGRAM_HANDLE = "fallah_rice.ir";
+export const INSTAGRAM_URL = `https://www.instagram.com/${INSTAGRAM_HANDLE}/`;
 
 export function absoluteUrl(path: string): string {
   if (/^https?:\/\//.test(path)) return path;
@@ -40,7 +42,7 @@ export function organizationJsonLd(store: StoreInfo) {
       streetAddress: store.address,
       addressCountry: "IR",
     },
-    sameAs: [`https://t.me/${store.telegram_username}`],
+    sameAs: [`https://t.me/${store.telegram_username}`, INSTAGRAM_URL],
   };
 }
 

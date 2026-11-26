@@ -4,14 +4,14 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 
 import { PageIntro } from "@/components/catalog";
-import { MailIcon, PhoneIcon, PinIcon, TelegramIcon } from "@/components/icons";
+import { InstagramIcon, MailIcon, PhoneIcon, PinIcon, TelegramIcon } from "@/components/icons";
 import { getSite } from "@/lib/api-server";
 import { PHONE_DISPLAY, PHONE_HREF } from "@/lib/format";
-import { jsonLd, organizationJsonLd } from "@/lib/seo";
+import { INSTAGRAM_HANDLE, INSTAGRAM_URL, jsonLd, organizationJsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "تماس با ما",
-  description: "راه‌های ارتباط با فروشگاه فلاح و پسران: تلفن، ایمیل و تلگرام.",
+  description: "راه‌های ارتباط با فروشگاه فلاح و پسران از طریق تلفن، ایمیل، تلگرام و اینستاگرام.",
   alternates: { canonical: "/contact" },
 };
 
@@ -48,10 +48,18 @@ async function ContactCards() {
       href: `mailto:${store.email}`,
       action: "ارسال ایمیل",
     },
+    {
+      icon: InstagramIcon,
+      title: "اینستاگرام",
+      value: <span dir="ltr">@{INSTAGRAM_HANDLE}</span>,
+      href: INSTAGRAM_URL,
+      action: "مشاهدهٔ صفحهٔ فروشگاه",
+      external: true,
+    },
   ];
   return (
     <>
-      <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map(({ icon: Icon, title, value, href, action, external }) => (
           <li key={title} className="card flex flex-col gap-3 p-6">
             <span className="flex size-12 items-center justify-center rounded-xl bg-green-50 text-green-800">

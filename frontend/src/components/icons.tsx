@@ -92,6 +92,13 @@ export const TelegramIcon = (p: IconProps) => (
     <path d="m9 13 8-6" />
   </Icon>
 );
+export const InstagramIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3" y="3" width="18" height="18" rx="5" />
+    <circle cx="12" cy="12" r="4" />
+    <circle cx="17.5" cy="6.5" r="0.75" fill="currentColor" stroke="none" />
+  </Icon>
+);
 export const PinIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z" />

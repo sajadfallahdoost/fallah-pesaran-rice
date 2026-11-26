@@ -51,16 +51,6 @@ export default async function GuidePage({ params }: PageProps<"/guides/[slug]">)
     },
   };
 
-  const crumbs = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "خانه", item: absoluteUrl("/") },
-      { "@type": "ListItem", position: 2, name: "راهنماها", item: absoluteUrl("/guides") },
-      { "@type": "ListItem", position: 3, name: guide.title },
-    ],
-  };
-
   return (
     <>
       <div className="border-b border-line bg-cream/60">
@@ -88,7 +78,6 @@ export default async function GuidePage({ params }: PageProps<"/guides/[slug]">)
         <p className="mt-8 text-xs text-ink-muted">آخرین به‌روزرسانی: {jalaliDate(guide.updatedAt)}</p>
       </article>
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(article)} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(crumbs)} />
     </>
   );
 }

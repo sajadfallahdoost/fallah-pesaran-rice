@@ -25,32 +25,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const fixed: MetadataRoute.Sitemap = [
     { url: `${SITE_URL}/` },
     { url: `${SITE_URL}/shop` },
-    { url: `${SITE_URL}/about` },
     { url: `${SITE_URL}/contact` },
     { url: `${SITE_URL}/faq` },
-    { url: `${SITE_URL}/track` },
     { url: `${SITE_URL}/guides` },
     ...guides,
   ];
-  try {
-    const [site, categories, products] = await Promise.all([getSite(), getCategories(), allCatalogProducts()]);
-    return [
-      ...fixed,
-      ...categories.map((category) => ({
-        url: `${SITE_URL}/category/${category.slug}`,
-        lastModified: category.updated_at ? new Date(category.updated_at) : undefined,
+
+  // A failed catalog request must surface as an error instead of a successful, incomplete sitemap.
+  const [site, categories, products] = await Promise.all([getSite(), getCategories(), allCatalogProducts()]);
+  return [
+    ...fixed,
+    ...categories.map((category) => ({
+      url: `${SITE_URL}/category/${category.slug}`,
+      lastModified: category.updated_at ? new Date(category.updated_at) : undefined,
+    })),
+    ...products
+      .filter((product) => !product.is_sample)
+      .map((product) => ({
+        url: `${SITE_URL}/product/${product.slug}`,
+        lastModified: product.updated_at ? new Date(product.updated_at) : undefined,
       })),
-      ...products
-        .filter((product) => !product.is_sample)
-        .map((product) => ({
-          url: `${SITE_URL}/product/${product.slug}`,
-          lastModified: product.updated_at ? new Date(product.updated_at) : undefined,
-        })),
-      ...site.pages
-        .filter((page) => page.slug !== "about")
-        .map((page) => ({ url: `${SITE_URL}/info/${page.slug}` })),
-    ];
-  } catch {
-    return fixed;
-  }
+    ...site.pages
+      .filter((page) => page.requires_owner_review === false)
+      .map((page) => ({
+        url: `${SITE_URL}${page.slug === "about" ? "/about" : `/info/${page.slug}`}`,
+        lastModified: page.updated_at ? new Date(page.updated_at) : undefined,
+      })),
+  ];
 }

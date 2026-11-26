@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: "پیگیری سفارش",
   description: "وضعیت سفارش خود را با شمارهٔ سفارش و شمارهٔ همراه ببینید.",
   alternates: { canonical: "/track" },
+  robots: { index: false, follow: true },
 };
 
 export default function TrackPage() {

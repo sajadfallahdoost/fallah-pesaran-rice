@@ -12,6 +12,7 @@ import { jsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import type { Banner } from "@/lib/types";
 
 export async function generateMetadata(): Promise<Metadata> {
+  await connection();
   const site = await getSite().catch(() => null);
   const store = site?.store;
   return {
@@ -99,13 +100,14 @@ function Hero({ banner }: { banner: Banner }) {
   );
 }
 
-function HeroFallback() {
+function HeroFallback({ pending = false }: { pending?: boolean }) {
+  const Heading = pending ? "p" : "h1";
   return (
     <section className="bg-green-900">
       <div className="container-page flex min-h-[30rem] flex-col justify-end py-12 text-rice sm:min-h-[34rem] md:justify-center lg:min-h-[38rem]">
-        <h1 className="max-w-xl text-3xl font-extrabold leading-[1.45] sm:text-4xl lg:text-5xl">
+        <Heading className="max-w-xl text-3xl font-extrabold leading-[1.45] sm:text-4xl lg:text-5xl">
           برنج ایرانی برای سفرهٔ هر روز خانواده
-        </h1>
+        </Heading>
         <div className="mt-8">
           <Link href="/shop" className="btn btn-gold">
             مشاهدهٔ محصولات
@@ -317,7 +319,7 @@ async function HomeContent() {
 function HomeSkeleton() {
   return (
     <>
-      <HeroFallback />
+      <HeroFallback pending />
       <div className="container-page pt-16">
         <ProductGridSkeleton count={4} />
       </div>

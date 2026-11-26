@@ -34,28 +34,30 @@ export async function generateMetadata({ params }: PageProps<"/product/[slug]">)
   };
 }
 
-function productJsonLd(product: ProductDetail) {
+function productJsonLd(product: ProductDetail, salesEnabled: boolean) {
+  const images = product.images.filter((image) => !image.is_generated_sample).map((image) => absoluteUrl(image.url));
+  const variants = salesEnabled && product.purchasable ? product.variants : [];
+  const offers = variants.map((variant) => ({
+    "@type": "Offer",
+    sku: variant.sku,
+    name: variant.title,
+    price: variant.price,
+    priceCurrency: "IRR",
+    availability:
+      variant.max_quantity > 0 && (variant.stock_status === "in_stock" || variant.stock_status === "low_stock")
+        ? "https://schema.org/InStock"
+        : "https://schema.org/OutOfStock",
+    url: absoluteUrl(`/product/${product.slug}`),
+  }));
   return {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
     sku: product.sku,
     description: product.short_description,
-    image: product.images.map((image) => absoluteUrl(image.url)),
-    brand: { "@type": "Brand", name: "فلاح و پسران" },
+    ...(images.length > 0 ? { image: images } : {}),
     category: product.category.name,
-    offers: product.variants.map((variant) => ({
-      "@type": "Offer",
-      sku: variant.sku,
-      name: variant.title,
-      price: variant.price,
-      priceCurrency: "IRR",
-      availability:
-        variant.stock_status === "in_stock" || variant.stock_status === "low_stock"
-          ? "https://schema.org/InStock"
-          : "https://schema.org/OutOfStock",
-      url: absoluteUrl(`/product/${product.slug}`),
-    })),
+    ...(offers.length > 0 ? { offers } : {}),
   };
 }
 
@@ -165,7 +167,10 @@ async function ProductContent({ params }: { params: PageProps<"/product/[slug]">
       )}
 
       {!product.is_sample && (
-        <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(productJsonLd(product))} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={jsonLd(productJsonLd(product, site?.store.sales_enabled === true))}
+        />
       )}
     </>
   );

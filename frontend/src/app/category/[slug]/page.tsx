@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { PageIntro, ProductGridSkeleton } from "@/components/catalog";
 import { ListingFilters, ProductListing, readListingParams } from "@/components/product-listing";
+import { listGuides } from "@/content/guides";
 import { getCategory, NotFoundError } from "@/lib/api-server";
 import { listingRobots } from "@/lib/seo";
 
@@ -25,7 +27,7 @@ export async function generateMetadata({
   const category = await getCategory(slug).catch(() => null);
   if (!category) return { title: "دسته‌بندی" };
   return {
-    title: category.seo_title || `خرید ${category.name}`,
+    title: category.seo_title || (category.slug === "rice" ? "خرید برنج ایرانی" : `خرید ${category.name}`),
     description: category.seo_description || category.description,
     alternates: { canonical: `/category/${category.slug}` },
     openGraph: category.image ? { images: [{ url: category.image, alt: category.image_alt }] } : undefined,
@@ -38,10 +40,11 @@ async function CategoryContent({ params, searchParams }: PageProps<"/category/[s
   const category = await loadCategory(slug);
   const listing = readListingParams(await searchParams);
   const basePath = `/category/${category.slug}`;
+  const guides = listGuides().filter((guide) => guide.relatedPaths.some((link) => link.href === basePath));
   return (
     <>
       <PageIntro
-        title={category.name}
+        title={category.slug === "rice" ? "برنج ایرانی" : category.name}
         description={category.description}
         crumbs={[{ href: "/shop", label: "محصولات" }, { label: category.name }]}
       />
@@ -52,6 +55,23 @@ async function CategoryContent({ params, searchParams }: PageProps<"/category/[s
         <div className="mt-8">
           <ProductListing basePath={basePath} params={listing} category={category.slug} />
         </div>
+        {guides.length > 0 && (
+          <nav aria-labelledby="category-guides" className="card mt-10 p-5 sm:p-6">
+            <h2 id="category-guides" className="text-lg font-bold text-green-800">
+              {`راهنمای انتخاب ${category.name}`}
+            </h2>
+            <ul className="mt-4 grid gap-4 sm:grid-cols-2">
+              {guides.map((guide) => (
+                <li key={guide.slug}>
+                  <Link href={`/guides/${guide.slug}`} className="font-semibold text-green-800 underline underline-offset-4">
+                    {guide.title}
+                  </Link>
+                  <p className="mt-1 text-sm leading-7 text-ink-soft">{guide.description}</p>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
       </div>
     </>
   );
