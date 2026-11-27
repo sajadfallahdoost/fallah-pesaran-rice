@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { ContentPageView, ContentSkeleton } from "@/components/content-page";
-import { getPage } from "@/lib/api-server";
+import { ContentPageView, ContentSkeleton, loadPage } from "@/components/content-page";
 
 export async function generateMetadata({ params }: PageProps<"/info/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const page = await getPage(slug).catch(() => null);
-  if (!page) return { title: "صفحه" };
+  const page = await loadPage(slug);
   return {
     title: page.seo_title || page.title,
     description: page.seo_description || page.summary,

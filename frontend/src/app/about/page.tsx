@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
@@ -23,7 +24,16 @@ export async function generateMetadata(): Promise<Metadata> {
 
 async function About() {
   await connection();
-  return <ContentPageView slug="about" />;
+  return (
+    <>
+      <ContentPageView slug="about" />
+      <div className="container-page max-w-3xl">
+        <Link href="/contact" className="btn btn-secondary">
+          نشانی و راه‌های تماس
+        </Link>
+      </div>
+    </>
+  );
 }
 
 export default function AboutPage() {

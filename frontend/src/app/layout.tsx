@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { CartProvider } from "@/components/cart-context";
 import { CartToast } from "@/components/header-client";
 import { Footer, Header, HeaderFallback } from "@/components/site-chrome";
-import { SITE_URL } from "@/lib/seo";
+import { HOME_DESCRIPTION, HOME_TITLE, SITE_URL } from "@/lib/seo";
 
 import "./globals.css";
 
@@ -20,11 +20,10 @@ const vazirmatn = localFont({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "فلاح و پسران | خرید آنلاین برنج ایرانی، چای و روغن زیتون",
+    default: HOME_TITLE,
     template: "%s | فلاح و پسران",
   },
-  description:
-    "فروشگاه آنلاین فلاح و پسران: برنج ایرانی در بسته‌های خانوادگی با قیمت هر کیلو، چای و روغن زیتون؛ هزینهٔ ارسال پیش از پرداخت مشخص است.",
+  description: HOME_DESCRIPTION,
   applicationName: "فلاح و پسران",
   openGraph: {
     type: "website",

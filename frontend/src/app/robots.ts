@@ -7,9 +7,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/cart", "/checkout", "/account", "/admin", "/api/", "/payments/", "/bankgateways/"],
+      disallow: ["/admin", "/api/", "/payments/", "/bankgateways/"],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
-    host: SITE_URL.replace(/^https?:\/\//, ""),
   };
 }

@@ -11,7 +11,7 @@ import { INSTAGRAM_HANDLE, INSTAGRAM_URL, jsonLd, organizationJsonLd } from "@/l
 
 export const metadata: Metadata = {
   title: "تماس با ما",
-  description: "راه‌های ارتباط با فروشگاه فلاح و پسران از طریق تلفن، ایمیل، تلگرام و اینستاگرام.",
+  description: "نشانی فلاح و پسران در تهران، میرداماد و راه‌های تماس از طریق تلفن، ایمیل، تلگرام و اینستاگرام.",
   alternates: { canonical: "/contact" },
 };
 
@@ -106,7 +106,7 @@ async function ContactCards() {
 export default function ContactPage() {
   return (
     <>
-      <PageIntro title="تماس با ما" crumbs={[{ label: "تماس با ما" }]} />
+      <PageIntro title="تماس با فلاح و پسران" crumbs={[{ label: "تماس با ما" }]} />
       <div className="container-page py-10">
         <Suspense fallback={<div className="skeleton h-56" />}>
           <ContactCards />

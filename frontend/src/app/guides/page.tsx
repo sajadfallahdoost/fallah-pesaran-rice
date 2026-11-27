@@ -7,7 +7,7 @@ import { listGuides } from "@/content/guides";
 import { absoluteUrl, jsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "راهنمای خرید و آموزش",
+  title: "مجلهٔ برنج فلاح",
   description:
     "راهنماهای خرید برنج ایرانی، تشخیص کیفیت، تفاوت ارقام، پخت و نگهداری، چای و روغن زیتون در فروشگاه فلاح و پسران.",
   alternates: { canonical: "/guides" },
@@ -29,8 +29,8 @@ export default function GuidesIndexPage() {
   return (
     <>
       <PageIntro
-        title="راهنمای خرید و آموزش"
-        description="متن‌های کوتاه و کاربردی برای انتخاب برنج، چای و روغن زیتون؛ بدون شعارهای تأییدنشده."
+        title="مجلهٔ برنج فلاح"
+        description="راهنمای خرید، پخت و نگهداری برنج ایرانی و انتخاب چای و روغن زیتون."
         crumbs={[{ label: "راهنماها" }]}
       />
       <div className="container-page py-10">

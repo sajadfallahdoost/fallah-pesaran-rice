@@ -7,8 +7,8 @@ import { Suspense } from "react";
 import { ProductGrid, ProductGridSkeleton } from "@/components/catalog";
 import { FaqList } from "@/components/faq-list";
 import { ChevronLeftIcon, PackageIcon, ScaleIcon, ShieldIcon, TruckIcon } from "@/components/icons";
-import { getHome, getSite } from "@/lib/api-server";
-import { jsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
+import { getHome, getSite, hasLivePayment } from "@/lib/api-server";
+import { HOME_DESCRIPTION, jsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import type { Banner } from "@/lib/types";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -17,9 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const store = site?.store;
   return {
     ...(store?.seo_title ? { title: { absolute: store.seo_title } } : {}),
-    description:
-      store?.seo_description ||
-      "فروشگاه آنلاین فلاح و پسران: برنج ایرانی در بسته‌های خانوادگی با قیمت هر کیلو، چای و روغن زیتون؛ هزینهٔ ارسال پیش از پرداخت مشخص است.",
+    description: store?.seo_description || HOME_DESCRIPTION,
     alternates: { canonical: "/" },
   };
 }
@@ -66,22 +64,32 @@ function HeroImage({ banner }: { banner: Banner }) {
   );
 }
 
-function Hero({ banner }: { banner: Banner }) {
+function Hero({ banner, storeName, salesEnabled }: { banner: Banner; storeName: string; salesEnabled: boolean }) {
   return (
     <section className="relative isolate overflow-hidden bg-green-900">
       <HeroImage banner={banner} />
       <div className="absolute inset-0 -z-10 bg-gradient-to-l from-green-950/90 via-green-950/65 to-green-950/10 max-md:bg-gradient-to-t max-md:from-green-950/95 max-md:via-green-950/60 max-md:to-green-950/10" />
       <div className="container-page flex min-h-[30rem] flex-col justify-end py-12 sm:min-h-[34rem] md:justify-center lg:min-h-[38rem]">
         <div className="max-w-xl text-rice">
-          {banner.eyebrow && <p className="text-sm font-semibold text-gold-200">{banner.eyebrow}</p>}
+          {banner.eyebrow && banner.eyebrow !== storeName && (
+            <p className="text-sm font-semibold text-gold-200">{banner.eyebrow}</p>
+          )}
           <h1 className="mt-3 text-3xl font-extrabold leading-[1.45] sm:text-4xl lg:text-5xl lg:leading-[1.4]">
-            {banner.title}
+            {storeName}
           </h1>
-          {banner.subtitle && <p className="mt-4 text-base leading-8 text-cream/90 sm:text-lg">{banner.subtitle}</p>}
+          <p className="mt-4 text-base leading-8 text-cream/90 sm:text-lg">
+            {salesEnabled ? banner.title : "برنج ایرانی، چای و روغن زیتون"}
+          </p>
+          {salesEnabled && banner.subtitle && <p className="mt-2 text-sm leading-7 text-cream/90">{banner.subtitle}</p>}
           <div className="mt-8 flex flex-wrap gap-3">
-            {banner.cta_label && (
+            {salesEnabled && banner.cta_label && (
               <Link href={banner.cta_url || "/shop"} className="btn btn-gold min-w-36">
                 {banner.cta_label}
+              </Link>
+            )}
+            {!salesEnabled && (
+              <Link href="/category/rice" className="btn btn-gold min-w-36">
+                مشاهدهٔ برنج‌ها
               </Link>
             )}
             <Link
@@ -100,13 +108,13 @@ function Hero({ banner }: { banner: Banner }) {
   );
 }
 
-function HeroFallback({ pending = false }: { pending?: boolean }) {
+function HeroFallback({ storeName = "فلاح و پسران", pending = false }: { storeName?: string; pending?: boolean }) {
   const Heading = pending ? "p" : "h1";
   return (
     <section className="bg-green-900">
       <div className="container-page flex min-h-[30rem] flex-col justify-end py-12 text-rice sm:min-h-[34rem] md:justify-center lg:min-h-[38rem]">
         <Heading className="max-w-xl text-3xl font-extrabold leading-[1.45] sm:text-4xl lg:text-5xl">
-          برنج ایرانی برای سفرهٔ هر روز خانواده
+          {storeName}
         </Heading>
         <div className="mt-8">
           <Link href="/shop" className="btn btn-gold">
@@ -120,33 +128,49 @@ function HeroFallback({ pending = false }: { pending?: boolean }) {
 
 async function HomeContent() {
   await connection();
-  const [home, site] = await Promise.all([getHome(), getSite()]);
+  const [home, site, livePayment] = await Promise.all([getHome(), getSite(), hasLivePayment()]);
   const banner = home.banners[0];
+  const { store } = site;
+  const canOrderOnline = store.sales_enabled && livePayment;
   const organization = organizationJsonLd(site.store);
   const website = websiteJsonLd(site.store);
 
   return (
     <>
-      {banner ? <Hero banner={banner} /> : <HeroFallback />}
+      {banner
+        ? <Hero banner={banner} storeName={store.name} salesEnabled={canOrderOnline} />
+        : <HeroFallback storeName={store.name} />}
 
-      <section aria-labelledby="promises" className="border-b border-line bg-cream/70">
-        <h2 id="promises" className="sr-only">
-          شیوهٔ خرید
-        </h2>
-        <ul className="container-page grid grid-cols-1 gap-x-6 gap-y-5 py-8 sm:grid-cols-2 lg:grid-cols-4">
-          {PROMISES.map(({ icon: Icon, title, text }) => (
-            <li key={title} className="flex items-start gap-3">
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white text-green-800 shadow-sm">
-                <Icon />
-              </span>
-              <span>
-                <span className="block font-bold text-ink">{title}</span>
-                <span className="mt-1 block text-sm leading-6 text-ink-soft">{text}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <div className="border-b border-line bg-cream/70">
+        <p className="container-page py-4 text-sm leading-7 text-ink-soft">
+          {store.address}
+          {" · "}
+          <Link href="/contact" className="font-semibold text-green-800 underline underline-offset-4">
+            تلفن و راه‌های تماس با {store.name}
+          </Link>
+          {!canOrderOnline && " · برای استعلام سفارش با فروشگاه تماس بگیرید."}
+        </p>
+      </div>
+      {canOrderOnline && (
+        <section aria-labelledby="promises" className="border-b border-line bg-cream/70">
+          <h2 id="promises" className="sr-only">
+            شیوهٔ خرید
+          </h2>
+          <ul className="container-page grid grid-cols-1 gap-x-6 gap-y-5 py-8 sm:grid-cols-2 lg:grid-cols-4">
+            {PROMISES.map(({ icon: Icon, title, text }) => (
+              <li key={title} className="flex items-start gap-3">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white text-green-800 shadow-sm">
+                  <Icon />
+                </span>
+                <span>
+                  <span className="block font-bold text-ink">{title}</span>
+                  <span className="mt-1 block text-sm leading-6 text-ink-soft">{text}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section aria-labelledby="categories-title" className="container-page pt-16">
         <div className="flex items-end justify-between gap-4">
@@ -232,9 +256,8 @@ async function HomeContent() {
               بستهٔ مناسب خانواده‌تان را انتخاب کنید
             </h2>
             <p className="mt-4 leading-8 text-ink-soft">
-              برای هر بسته، وزن، قیمت بسته و قیمت هر کیلو را کنار هم نشان می‌دهیم تا مقایسه ساده باشد. اطلاعات رقم،
-              منطقهٔ کشت و سال برداشت هر محصول در صفحهٔ همان محصول درج می‌شود. برای نکات انتخاب و تشخیص کیفیت،
-              راهنماهای خرید را هم بخوانید.
+              در راهنمای خرید، روش مقایسهٔ وزن بسته و قیمت هر کیلو را ببینید. برای انتخاب برنج مناسب مصرف روزانه
+              یا مهمانی، تفاوت ارقام و نکات بررسی کیفیت دانه را هم بخوانید.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link href="/category/rice" className="btn btn-primary">
@@ -265,7 +288,7 @@ async function HomeContent() {
           {[
             {
               href: "/guides/kharid-berenj-irani",
-              title: "خرید برنج ایرانی",
+              title: "راهنمای انتخاب برنج ایرانی",
               text: "مقایسهٔ بسته، قیمت هر کیلو و هزینهٔ ارسال.",
             },
             {

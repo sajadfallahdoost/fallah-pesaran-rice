@@ -100,7 +100,7 @@ export interface Variant {
 
 export interface ProductDetail extends ProductCard {
   sku: string;
-  purchasable: boolean;
+  purchasable: { ok: boolean; reason: string };
   updated_at: string;
   description: string;
   storage_and_use: string;

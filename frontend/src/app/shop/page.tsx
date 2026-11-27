@@ -2,16 +2,14 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { PageIntro, ProductGridSkeleton } from "@/components/catalog";
-import { ListingFilters, ProductListing, readListingParams } from "@/components/product-listing";
-import { listingRobots } from "@/lib/seo";
+import { ListingFilters, ProductListing, listingMetadata, readListingParams } from "@/components/product-listing";
 
 export async function generateMetadata({ searchParams }: PageProps<"/shop">): Promise<Metadata> {
   const params = readListingParams(await searchParams);
   return {
     title: "همهٔ محصولات",
-    description: "خرید آنلاین برنج ایرانی، چای و روغن زیتون با نمایش قیمت هر کیلو و هزینهٔ ارسال پیش از پرداخت.",
-    alternates: { canonical: "/shop" },
-    robots: listingRobots(params),
+    description: "فهرست محصولات فلاح و پسران در دسته‌های برنج ایرانی، چای و روغن زیتون.",
+    ...await listingMetadata("/shop", params),
   };
 }
 
@@ -23,6 +21,7 @@ async function Listing({ searchParams }: { searchParams: PageProps<"/shop">["sea
         <ListingFilters basePath="/shop" params={params} />
       </div>
       <div className="mt-8">
+        <h2 className="sr-only">فهرست محصولات</h2>
         <ProductListing basePath="/shop" params={params} />
       </div>
     </>

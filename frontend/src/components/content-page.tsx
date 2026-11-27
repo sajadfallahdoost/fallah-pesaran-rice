@@ -2,16 +2,13 @@ import { notFound } from "next/navigation";
 
 import { PageIntro, RichText } from "@/components/catalog";
 import { InfoIcon } from "@/components/icons";
-import { getPage, NotFoundError } from "@/lib/api-server";
+import { getPage } from "@/lib/api-server";
 import { jalaliDate } from "@/lib/format";
 
 export async function loadPage(slug: string) {
-  try {
-    return await getPage(slug);
-  } catch (error) {
-    if (error instanceof NotFoundError) notFound();
-    throw error;
-  }
+  const page = await getPage(slug);
+  if (!page) notFound();
+  return page;
 }
 
 export async function ContentPageView({ slug, crumbs }: { slug: string; crumbs?: { href?: string; label: string }[] }) {

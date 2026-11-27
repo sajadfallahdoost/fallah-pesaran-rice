@@ -22,7 +22,8 @@ export function ProductGallery({ images, name }: { images: ImageRef[]; name: str
           src={current.url}
           alt={current.alt || name}
           fill
-          preload
+          loading="eager"
+          fetchPriority={active === 0 ? "high" : undefined}
           sizes="(min-width: 1024px) 560px, 100vw"
           className={`object-contain px-3 pb-4 pt-2 sm:px-5 sm:pb-6 sm:pt-3${current.is_generated_sample ? "" : " brightness-[1.02] contrast-[1.03]"}`}
           quality={80}
@@ -46,6 +47,9 @@ export function ProductGallery({ images, name }: { images: ImageRef[]; name: str
           ))}
         </div>
       )}
+      <a href={current.url} className="self-start text-sm text-green-800 underline underline-offset-4">
+        دیدن تصویر در اندازهٔ اصلی
+      </a>
       {current.is_generated_sample && (
         <p className="text-xs text-ink-muted">تصویر نمونه</p>
       )}

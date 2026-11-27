@@ -8,12 +8,19 @@ import { SITE_URL } from "@/lib/seo";
 async function allCatalogProducts() {
   const query: ProductQuery = { page: "1", page_size: "48" };
   const first = await getProducts(query);
+  if (!first) throw new Error("Catalog missing from the sitemap source");
   const pages = Math.max(1, first.page_count);
   if (pages === 1) return first.results;
   const rest = await Promise.all(
     Array.from({ length: pages - 1 }, (_, index) => getProducts({ ...query, page: String(index + 2) })),
   );
-  return [...first.results, ...rest.flatMap((page) => page.results)];
+  return [
+    ...first.results,
+    ...rest.flatMap((page) => {
+      if (!page) throw new Error("Catalog page missing from the sitemap source");
+      return page.results;
+    }),
+  ];
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -35,7 +42,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [site, categories, products] = await Promise.all([getSite(), getCategories(), allCatalogProducts()]);
   return [
     ...fixed,
-    ...categories.map((category) => ({
+    ...categories.filter((category) => category.product_count > 0).map((category) => ({
       url: `${SITE_URL}/category/${category.slug}`,
       lastModified: category.updated_at ? new Date(category.updated_at) : undefined,
     })),

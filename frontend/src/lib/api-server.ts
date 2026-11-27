@@ -8,6 +8,7 @@ import type {
   Faq,
   HomeData,
   Paginated,
+  PaymentProviderInfo,
   ProductCard,
   ProductDetail,
   SiteData,
@@ -15,14 +16,14 @@ import type {
 
 const BACKEND = process.env.BACKEND_INTERNAL_URL ?? "http://127.0.0.1:8010";
 
-export class NotFoundError extends Error {}
-
-async function getJson<T>(path: string): Promise<T> {
+function getJson<T>(path: string): Promise<T>;
+function getJson<T>(path: string, allowNotFound: true): Promise<T | null>;
+async function getJson<T>(path: string, allowNotFound = false): Promise<T | null> {
   const response = await fetch(`${BACKEND}/api/v1${path}`, {
     headers: { Accept: "application/json" },
     signal: AbortSignal.timeout(8000),
   });
-  if (response.status === 404) throw new NotFoundError(path);
+  if (allowNotFound && response.status === 404) return null;
   if (!response.ok) throw new Error(`Backend ${response.status} for ${path}`);
   return (await response.json()) as T;
 }
@@ -51,11 +52,11 @@ export async function getCategories(): Promise<Category[]> {
   return getJson<Category[]>("/categories/");
 }
 
-export async function getCategory(slug: string): Promise<Category> {
+export async function getCategory(slug: string): Promise<Category | null> {
   "use cache";
   cacheLife({ stale: 60, revalidate: 300, expire: 3600 });
   cacheTag("catalog");
-  return getJson<Category>(`/categories/${encodeURIComponent(slug)}/`);
+  return getJson<Category>(`/categories/${encodeURIComponent(slug)}/`, true);
 }
 
 export interface ProductQuery {
@@ -67,27 +68,38 @@ export interface ProductQuery {
   page_size?: string;
 }
 
-export async function getProducts(query: ProductQuery): Promise<Paginated<ProductCard>> {
+export async function getProducts(query: ProductQuery): Promise<Paginated<ProductCard> | null> {
   "use cache";
   cacheLife({ stale: 30, revalidate: 60, expire: 3600 });
   cacheTag("catalog");
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) if (value) params.set(key, value);
-  return getJson<Paginated<ProductCard>>(`/products/?${params.toString()}`);
+  return getJson<Paginated<ProductCard>>(`/products/?${params.toString()}`, true);
 }
 
-export async function getProduct(slug: string): Promise<ProductDetail> {
+export async function getProduct(slug: string): Promise<ProductDetail | null> {
   "use cache";
   cacheLife({ stale: 30, revalidate: 60, expire: 3600 });
   cacheTag("catalog", `product:${slug}`);
-  return getJson<ProductDetail>(`/products/${encodeURIComponent(slug)}/`);
+  return getJson<ProductDetail>(`/products/${encodeURIComponent(slug)}/`, true);
 }
 
-export async function getPage(slug: string): Promise<ContentPage> {
+export async function getPage(slug: string): Promise<ContentPage | null> {
   "use cache";
   cacheLife({ stale: 300, revalidate: 3600, expire: 86400 });
   cacheTag("content");
-  return getJson<ContentPage>(`/pages/${encodeURIComponent(slug)}/`);
+  return getJson<ContentPage>(`/pages/${encodeURIComponent(slug)}/`, true);
+}
+
+async function getPaymentProviders(): Promise<PaymentProviderInfo[]> {
+  "use cache";
+  cacheLife({ stale: 30, revalidate: 60, expire: 3600 });
+  return getJson<PaymentProviderInfo[]>("/payments/providers/");
+}
+
+export async function hasLivePayment(): Promise<boolean> {
+  const providers = await getPaymentProviders().catch(() => []);
+  return providers.some((provider) => !provider.is_test);
 }
 
 export async function getFaqs(): Promise<Faq[]> {

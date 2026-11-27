@@ -7,23 +7,20 @@ import { BuyBox } from "@/components/buy-box";
 import { Breadcrumbs, ProductGrid, RichText, SampleBadge } from "@/components/catalog";
 import { InfoIcon, ShieldIcon, TruckIcon } from "@/components/icons";
 import { ProductGallery } from "@/components/product-gallery";
-import { getProduct, getSite, NotFoundError } from "@/lib/api-server";
+import { listGuides } from "@/content/guides";
+import { getProduct, getSite, hasLivePayment } from "@/lib/api-server";
 import { absoluteUrl, jsonLd } from "@/lib/seo";
 import type { ProductDetail } from "@/lib/types";
 
 async function loadProduct(slug: string) {
-  try {
-    return await getProduct(slug);
-  } catch (error) {
-    if (error instanceof NotFoundError) notFound();
-    throw error;
-  }
+  const product = await getProduct(slug);
+  if (!product) notFound();
+  return product;
 }
 
 export async function generateMetadata({ params }: PageProps<"/product/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const product = await getProduct(slug).catch(() => null);
-  if (!product) return { title: "محصول" };
+  const product = await loadProduct(slug);
   const image = product.images[0] ?? product.image;
   return {
     title: product.seo_title || product.name,
@@ -34,9 +31,9 @@ export async function generateMetadata({ params }: PageProps<"/product/[slug]">)
   };
 }
 
-function productJsonLd(product: ProductDetail, salesEnabled: boolean) {
+function productJsonLd(product: ProductDetail, canOrder: boolean) {
   const images = product.images.filter((image) => !image.is_generated_sample).map((image) => absoluteUrl(image.url));
-  const variants = salesEnabled && product.purchasable ? product.variants : [];
+  const variants = canOrder && product.purchasable.ok ? product.variants : [];
   const offers = variants.map((variant) => ({
     "@type": "Offer",
     sku: variant.sku,
@@ -57,14 +54,22 @@ function productJsonLd(product: ProductDetail, salesEnabled: boolean) {
     description: product.short_description,
     ...(images.length > 0 ? { image: images } : {}),
     category: product.category.name,
+    url: absoluteUrl(`/product/${product.slug}`),
     ...(offers.length > 0 ? { offers } : {}),
   };
 }
 
 async function ProductContent({ params }: { params: PageProps<"/product/[slug]">["params"] }) {
   const { slug } = await params;
-  const [product, site] = await Promise.all([loadProduct(slug), getSite().catch(() => null)]);
-  const salesEnabled = site?.store.sales_enabled ?? true;
+  const [product, site, livePayment] = await Promise.all([
+    loadProduct(slug),
+    getSite().catch(() => null),
+    hasLivePayment(),
+  ]);
+  const salesEnabled = site?.store.sales_enabled === true;
+  const canOrder = salesEnabled && livePayment;
+  const productPath = `/product/${product.slug}`;
+  const guides = listGuides().filter((guide) => guide.relatedPaths.some((link) => link.href === productPath));
 
   return (
     <>
@@ -106,21 +111,33 @@ async function ProductContent({ params }: { params: PageProps<"/product/[slug]">
             <BuyBox
               productName={product.name}
               variants={product.variants}
-              purchasable={product.purchasable}
+              purchasable={product.purchasable.ok}
               salesEnabled={salesEnabled}
             />
           </div>
 
-          <ul className="mt-6 grid gap-3 text-sm text-ink-soft sm:grid-cols-2">
-            <li className="flex items-start gap-2.5 rounded-xl border border-line bg-white px-4 py-3">
-              <TruckIcon size={20} className="mt-0.5 shrink-0 text-green-800" />
-              هزینهٔ ارسال بر اساس استان، شهر و وزن، پیش از پرداخت نمایش داده می‌شود.
-            </li>
-            <li className="flex items-start gap-2.5 rounded-xl border border-line bg-white px-4 py-3">
-              <ShieldIcon size={20} className="mt-0.5 shrink-0 text-green-800" />
-              پرداخت فقط در صفحهٔ درگاه بانکی؛ اطلاعات کارت در این سایت وارد نمی‌شود.
-            </li>
-          </ul>
+          {salesEnabled && !canOrder && product.purchasable.ok && (
+            <p className="mt-4 text-sm leading-7 text-ink-soft">
+              پرداخت آنلاین فعلاً برای خرید واقعی در دسترس نیست. برای استعلام سفارش با فروشگاه تماس بگیرید.
+            </p>
+          )}
+
+          {canOrder && product.purchasable.ok ? (
+            <ul className="mt-6 grid gap-3 text-sm text-ink-soft sm:grid-cols-2">
+              <li className="flex items-start gap-2.5 rounded-xl border border-line bg-white px-4 py-3">
+                <TruckIcon size={20} className="mt-0.5 shrink-0 text-green-800" />
+                هزینهٔ ارسال بر اساس استان، شهر و وزن، پیش از پرداخت نمایش داده می‌شود.
+              </li>
+              <li className="flex items-start gap-2.5 rounded-xl border border-line bg-white px-4 py-3">
+                <ShieldIcon size={20} className="mt-0.5 shrink-0 text-green-800" />
+                پرداخت فقط در صفحهٔ درگاه بانکی؛ اطلاعات کارت در این سایت وارد نمی‌شود.
+              </li>
+            </ul>
+          ) : (
+            <Link href="/contact" className="mt-6 inline-block text-sm font-semibold text-green-800 underline underline-offset-4">
+              راه‌های تماس برای پرسش دربارهٔ محصول
+            </Link>
+          )}
 
           {product.attributes.length > 0 && (
             <section aria-labelledby="specs" className="mt-10">
@@ -166,10 +183,25 @@ async function ProductContent({ params }: { params: PageProps<"/product/[slug]">
         </section>
       )}
 
+      {guides.length > 0 && (
+        <nav aria-labelledby="product-guides" className="container-page pt-12">
+          <h2 id="product-guides" className="text-lg font-bold text-green-800">راهنمای انتخاب و مصرف</h2>
+          <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+            {guides.map((guide) => (
+              <li key={guide.slug}>
+                <Link href={`/guides/${guide.slug}`} className="font-semibold text-green-800 underline underline-offset-4">
+                  {guide.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+
       {!product.is_sample && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={jsonLd(productJsonLd(product, site?.store.sales_enabled === true))}
+          dangerouslySetInnerHTML={jsonLd(productJsonLd(product, canOrder))}
         />
       )}
     </>

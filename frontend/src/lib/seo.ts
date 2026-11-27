@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
-
 import type { StoreInfo } from "@/lib/types";
 
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3010").replace(/\/$/, "");
+export const HOME_TITLE = "برنج فلاح و پسران | برنج ایرانی، چای و روغن زیتون";
+export const HOME_DESCRIPTION =
+  "وب‌سایت فلاح و پسران در تهران، میرداماد. دسته‌های برنج ایرانی، چای و روغن زیتون، راهنماهای انتخاب و راه‌های تماس با فروشگاه را ببینید.";
 export const INSTAGRAM_HANDLE = "fallah_rice.ir";
 export const INSTAGRAM_URL = `https://www.instagram.com/${INSTAGRAM_HANDLE}/`;
 
@@ -16,21 +17,11 @@ export function jsonLd(data: unknown): { __html: string } {
   return { __html: JSON.stringify(data).replace(/</g, "\\u003c") };
 }
 
-/** Filtered/sorted/paginated listings stay crawlable but should not compete with canonical URLs. */
-export function listingRobots(params: {
-  q?: string;
-  sort?: string;
-  in_stock?: string;
-  page?: string;
-}): Metadata["robots"] {
-  const hasFilter = Boolean(params.q || params.in_stock || params.page || (params.sort && params.sort !== "featured"));
-  return hasFilter ? { index: false, follow: true } : undefined;
-}
-
 export function organizationJsonLd(store: StoreInfo) {
   return {
     "@context": "https://schema.org",
     "@type": "Store",
+    "@id": absoluteUrl("/#store"),
     name: store.name,
     url: absoluteUrl("/"),
     logo: absoluteUrl("/brand/icon-512.png"),
@@ -42,7 +33,7 @@ export function organizationJsonLd(store: StoreInfo) {
       streetAddress: store.address,
       addressCountry: "IR",
     },
-    sameAs: [`https://t.me/${store.telegram_username}`, INSTAGRAM_URL],
+    sameAs: [INSTAGRAM_URL],
   };
 }
 
@@ -50,16 +41,10 @@ export function websiteJsonLd(store: StoreInfo) {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": absoluteUrl("/#website"),
     name: store.name,
     url: absoluteUrl("/"),
     inLanguage: "fa-IR",
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: `${absoluteUrl("/shop")}?q={search_term_string}`,
-      },
-      "query-input": "required name=search_term_string",
-    },
+    publisher: { "@id": absoluteUrl("/#store") },
   };
 }

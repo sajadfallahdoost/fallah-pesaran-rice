@@ -106,7 +106,7 @@ export function ProductCard({ product, priority = false }: { product: ProductCar
           )}
         </div>
         <span className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-green-800" aria-hidden="true">
-          {product.variant_count > 1 ? "انتخاب بسته" : "مشاهده و خرید"}
+          {product.is_sample ? "مشاهدهٔ نمونه" : product.variant_count > 1 ? "انتخاب بسته" : "مشاهده و خرید"}
           <ChevronLeftIcon size={16} />
         </span>
       </div>

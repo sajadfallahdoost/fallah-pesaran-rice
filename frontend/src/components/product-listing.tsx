@@ -1,8 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
 import { EmptyState, ProductGrid } from "@/components/catalog";
 import { SearchIcon } from "@/components/icons";
-import { getProducts, type ProductQuery } from "@/lib/api-server";
+import { getProducts } from "@/lib/api-server";
 import { faDigits } from "@/lib/format";
 
 export const SORT_OPTIONS = [
@@ -21,12 +23,26 @@ export function readListingParams(raw: Record<string, string | string[] | undefi
   };
   const sort = pick("sort");
   const page = pick("page");
+  const pageNumber = page && /^\d{1,4}$/.test(page) ? Number(page) : 1;
   return {
     q: pick("q"),
     sort: SORT_OPTIONS.some((o) => o.value === sort) ? sort : undefined,
     in_stock: pick("in_stock") === "1" ? "1" : undefined,
-    page: page && /^\d{1,4}$/.test(page) && page !== "1" ? page : undefined,
+    page: pageNumber > 1 ? String(pageNumber) : undefined,
   };
+}
+
+export async function listingMetadata(
+  path: string,
+  params: ListingParams,
+  category?: string,
+): Promise<Pick<Metadata, "alternates" | "robots">> {
+  if (params.page && !(await getProducts({ ...params, category }))) notFound();
+  const hasFilter = Boolean(params.q || params.in_stock || (params.sort && params.sort !== "featured"));
+  if (hasFilter) {
+    return { alternates: { canonical: path }, robots: { index: false, follow: true } };
+  }
+  return { alternates: { canonical: params.page ? `${path}?page=${params.page}` : path } };
 }
 
 function hrefWith(basePath: string, params: ListingParams, change: Partial<ListingParams>): string {
@@ -97,9 +113,9 @@ export async function ProductListing({
   params: ListingParams;
   category?: string;
 }) {
-  const query: ProductQuery = { ...params, category };
-  const data = await getProducts(query).catch(() => null);
-  if (!data) {
+  const data = await getProducts({ ...params, category }).catch(() => undefined);
+  if (data === null) notFound();
+  if (data === undefined) {
     return (
       <EmptyState
         title="فهرست محصولات بارگذاری نشد"

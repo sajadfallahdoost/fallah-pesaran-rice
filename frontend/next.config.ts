@@ -12,11 +12,19 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
 ];
 
+const revision = process.env.RELEASE_REVISION;
+if (revision && !/^[a-f0-9]{40}$/.test(revision)) {
+  throw new Error("RELEASE_REVISION must be a full Git SHA");
+}
+
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   output: "standalone",
   poweredByHeader: false,
+  // Resolve existence and canonical metadata before committing the HTTP response.
+  htmlLimitedBots: /.*/,
+  ...(revision ? { generateBuildId: async () => revision } : {}),
   // Django URLs end with "/"; Next must not 308 them away before the rewrite.
   skipTrailingSlashRedirect: true,
   images: {
@@ -39,10 +47,20 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     // CMS also has an "about" page; the public URL is /about to avoid duplicate content.
-    return [{ source: "/info/about", destination: "/about", permanent: true }];
+    return [
+      { source: "/info/about", destination: "/about", permanent: true },
+      { source: "/info/about/", destination: "/about", permanent: true },
+      { source: "/:section(shop|guides|about|contact|faq)/", destination: "/:section", permanent: true },
+      {
+        source: "/:section(product|category|guides|info)/:slug/",
+        destination: "/:section/:slug",
+        permanent: true,
+      },
+    ];
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    const releaseHeaders = revision ? [{ key: "X-Fallah-Release", value: revision }] : [];
+    return [{ source: "/:path*", headers: [...securityHeaders, ...releaseHeaders] }];
   },
   turbopack: {
     rules: {

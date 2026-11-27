@@ -1,5 +1,7 @@
 # سئو و رشد ورودی — فلاح و پسران
 
+برای وضعیت فعلی، نتایج ممیزی جدید و برنامهٔ پیگیری به [گزارش ۲۷ نوامبر ۲۰۲۶](SEO_REPORT_FA.md) مراجعه کنید. این صفحه گزارش مرحلهٔ قبلی پروژه را نگه می‌دارد.
+
 تاریخ گزارش ۲۶ نوامبر ۲۰۲۶ است. دامنهٔ اصلی `https://www.fallah-rice.ir` است.
 
 این سند نتایج تحقیق، ممیزی، پیاده‌سازی لوکال و برنامهٔ ۳۰/۶۰/۹۰ روزه را جمع می‌کند. هیچ رتبه، حجم جست‌وجو یا نتیجهٔ غنی تضمین نشده است.
@@ -183,6 +185,14 @@
 
 از ریشهٔ مخزن `timeout 5m python3 tools/seo_monitor.py` را اجرا کن. خروجی JSON تاریخ و SHA لوکال، وضعیت نقشه و `robots.txt`، نشانی‌های canonical و نمونهٔ لینک‌های داخلی را ثبت می‌کند. کد خروجی ۱ یعنی بررسی سلامت موردی برای پیگیری یافته است و گزارش JSON همچنان تولید می‌شود. نبود صفحهٔ محصول در نقشه در روز ممیزی با کاتالوگ هماهنگ بود. هر سه محصول عمومی نمونه بودند و فروش غیرفعال بود.
 
+پایش جای `canonical` را در `head` پاسخ HTML با User-Agent شبیه Googlebot کنترل می‌کند. با دادهٔ نهایی Search Console برای دو بازهٔ ۲۸روزه، تغییر کلیک، نمایش، CTR و میانگین جایگاه را ثبت می‌کند. در آخرین بازه، جفت‌های پرس‌وجو و صفحه با دست‌کم ۵۰ نمایش و میانگین جایگاه ۴ تا ۲۰ برای بازبینی عنوان، محتوا و قصد جست‌وجو اولویت می‌گیرند. [راهنمای canonical گوگل](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls#rel-canonical-link-method) · [Search Analytics API](https://developers.google.com/webmaster-tools/v1/searchanalytics/query)
+
 پایش عمومی بدون اتصال گوگل اجرا می‌شود. پس از تأیید مالکیت، Search Console API را برای هویت مجاز فعال کن و فقط دسترسی `webmasters.readonly` بده. برای اجرای زمان‌دار می‌توان از Google ADC مجاز با `SEARCH_CONSOLE_USE_ADC=1` و بسته‌های `google-auth` و `requests` استفاده کرد. برای آزمون دستی، توکن کوتاه‌عمر را از محیط امن با `SEARCH_CONSOLE_ACCESS_TOKEN` به برنامه بده. تنظیم پیش‌فرض Property دامنهٔ `sc-domain:fallah-rice.ir` است. اگر از Property پیشوند URL استفاده می‌کنی، `SEARCH_CONSOLE_SITE_URL=https://www.fallah-rice.ir/` را تنظیم کن. خروجی‌های Search Console و اطلاعات اتصال را در فضای خصوصی اجرا نگه دار. [مستندات Search Console API](https://developers.google.com/webmaster-tools)
 
 وضعیت نمایش سایت در AI Overviews و AI Mode را در تنظیمات Property و شمار نمایش‌ها را در گزارش **Generative AI performance** بررسی کن. [کنترل نمایش AI](https://developers.google.com/search/docs/fundamentals/gen-ai-controls) · [گزارش AI](https://support.google.com/webmasters/answer/16984139)
+
+## دوره‌های بهبود سئو
+
+در هر نوبت، یک خوشه را از نقشهٔ کلمات انتخاب کن. دو صفحهٔ مرتبط را با صفحهٔ مقصد فروشگاه مقایسه کن و تاریخ، عبارت، نشانی و شاهد را ثبت کن. برای «خرید برنج ایرانی» و «خرید برنج شمال»، موجودی واقعی، رقم، فرآوری، وزن بسته، قیمت هر کیلو و هزینهٔ ارسال تا دست خریدار را بررسی کن. [صفحهٔ خرید برنج توسکا](https://tooskarice.com/rice-products/) · [فروشگاه برنج پارسا](https://www.riceparsa.ir/)
+
+تغییر فنی را با پاسخ HTML، canonical و نقشه بسنج. اثر تغییر عنوان یا محتوای یک صفحه را پس از جمع‌شدن داده با نمایش، کلیک و CTR همان عبارت و صفحه بررسی کن. قیمت و موجودی را از کاتالوگ واقعی بخوان و افزودن به سبد را در محیط آزمون بررسی کن. برای مقایسهٔ دوره‌ای از داده‌های نهایی Search Console و صفحات مشابه استفاده کن.

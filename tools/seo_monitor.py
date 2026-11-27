@@ -19,13 +19,17 @@ SITEMAP = f"{ORIGIN}/sitemap.xml"
 PATHS = (
     "/",
     "/category/rice",
+    "/category/tea",
+    "/category/olive-oil",
     "/guides/kharid-berenj-irani",
     "/guides/tashkhis-keyfiyat-berenj",
     "/guides/tafavot-anvae-berenj",
     "/about",
     "/contact",
 )
+INSPECTION_PATHS = ("/", "/category/rice", "/guides/kharid-berenj-irani", "/contact")
 USER_AGENT = "FallahRice-SEOMonitor/1.0"
+STOREFRONT_USER_AGENT = f"Mozilla/5.0 (compatible; Googlebot/2.1; {USER_AGENT})"
 TIMEOUT = 8
 MAX_BODY = 2 * 1024 * 1024
 LINK_LIMIT = 12
@@ -43,8 +47,8 @@ class NoRedirect(HTTPRedirectHandler):
 OPENER = build_opener(NoRedirect)
 
 
-def fetch(url, *, token=None, payload=None, read_body=True):
-    headers = {"User-Agent": USER_AGENT}
+def fetch(url, *, token=None, payload=None, read_body=True, user_agent=USER_AGENT):
+    headers = {"User-Agent": user_agent}
     data = None
     if payload is not None:
         headers["Content-Type"] = "application/json"
@@ -78,6 +82,8 @@ class PageMetadata(HTMLParser):
     def __init__(self):
         super().__init__()
         self.canonicals = []
+        self.canonicals_in_head = []
+        self.inside_head = False
         self.directives = []
         self.links = []
         self.heading_count = 0
@@ -89,13 +95,18 @@ class PageMetadata(HTMLParser):
         attrs = dict(attrs)
         name = (attrs.get("name") or "").lower()
         content = (attrs.get("content") or "").strip()
-        if tag == "link" and "canonical" in (attrs.get("rel") or "").lower().split():
-            self.canonicals.append(attrs.get("href") or "")
+        if tag == "head":
+            self.inside_head = True
+        elif tag == "link" and "canonical" in (attrs.get("rel") or "").lower().split():
+            href = attrs.get("href") or ""
+            self.canonicals.append(href)
+            if self.inside_head:
+                self.canonicals_in_head.append(href)
         elif tag == "meta" and name in {"robots", "googlebot"}:
             self.directives.append(content)
-        elif tag == "meta" and name == "description":
+        elif tag == "meta" and name == "description" and self.inside_head:
             self.has_description |= bool(content)
-        elif tag == "title":
+        elif tag == "title" and self.inside_head:
             self.inside_title = True
         elif tag == "h1":
             self.heading_count += 1
@@ -103,7 +114,9 @@ class PageMetadata(HTMLParser):
             self.links.append(attrs["href"])
 
     def handle_endtag(self, tag):
-        if tag == "title":
+        if tag == "head":
+            self.inside_head = False
+        elif tag == "title":
             self.inside_title = False
 
     def handle_data(self, data):
@@ -149,7 +162,7 @@ def storefront():
     def probe(url, read_body=True):
         if url not in requests:
             try:
-                requests[url] = fetch(url, read_body=read_body)
+                requests[url] = fetch(url, read_body=read_body, user_agent=STOREFRONT_USER_AGENT)
             except (OSError, ValueError, URLError) as error:
                 requests[url] = (None, {}, "")
                 issues.append({"url": url, "issue": f"request failed ({type(error).__name__})"})
@@ -209,11 +222,14 @@ def storefront():
         directives = page.directives + headers.get_all("X-Robots-Tag", [])
         noindex = any(re.search(r"\b(?:noindex|none)\b", directive, re.I) for directive in directives)
         snippet_blocked = any(re.search(r"\b(?:nosnippet|max-snippet:\s*0\b)", directive, re.I) for directive in directives)
-        page_report.update(canonical=page.canonicals, noindex=noindex, snippet_blocked=snippet_blocked,
+        page_report.update(canonical=page.canonicals, canonical_in_head=page.canonicals_in_head,
+                           noindex=noindex, snippet_blocked=snippet_blocked,
                            robots_directives=directives, h1=page.heading_count)
         problems = []
         if canonical != [url]:
             problems.append("missing or mismatched canonical")
+        elif not page.canonicals_in_head:
+            problems.append("canonical is outside head")
         draft_about = url == f"{ORIGIN}/about" and noindex and url not in candidates
         if allowed is False or (noindex and not draft_about):
             problems.append("indexing blocked")
@@ -221,8 +237,10 @@ def storefront():
             problems.append("search previews restricted")
         if url not in candidates and not draft_about:
             problems.append("missing in sitemap")
-        if not page.has_title or not page.has_description or not page.heading_count:
-            problems.append("missing title, description, or h1")
+        if not page.has_title or not page.has_description:
+            problems.append("missing title or description in head")
+        if page.heading_count != 1:
+            problems.append("expected one h1")
         issues.extend({"url": url, "issue": problem} for problem in problems)
         for href in page.links:
             try:
@@ -243,6 +261,7 @@ def storefront():
         "redirects": redirects,
         "robots_status": robots_status,
         "sitemap_status": sitemap_status,
+        "release_revision": requests.get(f"{ORIGIN}/", (None, {}, ""))[1].get("X-Fallah-Release"),
         "sitemap_urls": len(sitemap_urls),
         "sitemap_products": len(products),
         "pages": pages,
@@ -250,6 +269,33 @@ def storefront():
         "issues": issues,
         "request_count": len(requests),
     }
+
+
+def growth_signals(periods):
+    newer, older = periods
+    summary = {}
+    totals = [period["property_total"] for period in (newer, older)]
+    if all(isinstance(rows, list) and rows for rows in totals):
+        current_total, previous_total = (rows[0] for rows in totals)
+        if all(row[metric] is not None for row in (current_total, previous_total) for metric in METRICS):
+            summary["property_change"] = {
+                "clicks": current_total["clicks"] - previous_total["clicks"],
+                "impressions": current_total["impressions"] - previous_total["impressions"],
+                "ctr_percentage_points": round(100 * (current_total["ctr"] - previous_total["ctr"]), 2),
+                "position": round(current_total["position"] - previous_total["position"], 2),
+            }
+
+    query_rows = newer["target_query_and_page"]
+    if isinstance(query_rows, list):
+        eligible = [
+            row for row in query_rows
+            if row["impressions"] is not None and row["impressions"] >= 50
+            and row["position"] is not None and 4 <= row["position"] <= 20
+        ]
+        summary["query_page_review_candidates"] = sorted(
+            eligible, key=lambda row: (-row["impressions"], row["ctr"] if row["ctr"] is not None else 1),
+        )[:10]
+    return summary
 
 
 def search_console(use_adc):
@@ -334,9 +380,10 @@ def search_console(use_adc):
                     rows.append(entry)
                 period[name] = rows
             result["periods"].append(period)
+        result["growth_signals"] = growth_signals(result["periods"])
 
     inspections = {}
-    for path in PATHS[:3]:
+    for path in INSPECTION_PATHS:
         url = f"{ORIGIN}{path}"
         response = query(inspection_url, {"inspectionUrl": url, "siteUrl": property_url})
         inspections[url] = response.get("inspectionResult", {}).get("indexStatusResult", response)

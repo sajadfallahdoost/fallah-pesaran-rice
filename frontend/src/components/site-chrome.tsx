@@ -25,7 +25,7 @@ export function Logo({ compact = false }: { compact?: boolean }) {
 
 const STATIC_LINKS = [
   { href: "/shop", label: "همهٔ محصولات" },
-  { href: "/guides", label: "راهنما" },
+  { href: "/guides", label: "مجله" },
   { href: "/about", label: "دربارهٔ ما" },
   { href: "/contact", label: "تماس" },
 ];
@@ -105,7 +105,7 @@ export async function Header() {
         <div className="bg-green-900 text-rice">
           <p className="container-page flex items-center justify-center gap-2 py-2 text-center text-[0.8rem] leading-6">
             <InfoIcon size={16} className="shrink-0 text-gold-200" />
-            نسخهٔ نمایشی: محصولات، قیمت‌ها و تصاویر نمونه‌اند و پرداخت با درگاه آزمایشی انجام می‌شود؛ پولی جابه‌جا نمی‌شود.
+            موارد نمایشی فروشگاه با برچسب نمونه مشخص شده‌اند.
           </p>
         </div>
       )}
