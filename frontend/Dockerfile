@@ -11,7 +11,11 @@ ARG NEXT_PUBLIC_SITE_URL=http://localhost:8090
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npm run build
+# Metadata and cached content may be prerendered while building the image.
+ARG BACKEND_INTERNAL_URL=http://backend:8000
+ENV BACKEND_INTERNAL_URL=$BACKEND_INTERNAL_URL
+ARG RELEASE_REVISION
+RUN RELEASE_REVISION="$RELEASE_REVISION" npm run build
 
 FROM node:20-bookworm-slim AS runtime
 WORKDIR /app
@@ -22,6 +26,8 @@ ENV NODE_ENV=production \
 COPY --from=build --chown=node:node /app/.next/standalone ./
 COPY --from=build --chown=node:node /app/.next/static ./.next/static
 COPY --from=build --chown=node:node /app/public ./public
+ARG RELEASE_REVISION
+LABEL org.opencontainers.image.revision="$RELEASE_REVISION"
 USER node
 EXPOSE 3000
 CMD ["node", "server.js"]

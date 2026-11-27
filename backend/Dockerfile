@@ -25,6 +25,8 @@ USER app
 ENV DJANGO_MEDIA_ROOT=/data/media \
     DJANGO_STATIC_ROOT=/app/staticfiles
 
+ARG RELEASE_REVISION
+LABEL org.opencontainers.image.revision="$RELEASE_REVISION"
 EXPOSE 8000
 ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["web"]

@@ -7,7 +7,9 @@ from azbankgateways.models import Bank
 from django.core.management import call_command
 from django.utils import timezone
 
+from apps.core.api import ApiError
 from apps.orders.models import Order
+from apps.orders.services.lifecycle import advance_fulfillment, expire_order_if_due
 from apps.payments.models import MockGatewayDecision, PaymentAttempt, PaymentProvider
 from tests.conftest import variant
 
@@ -16,6 +18,13 @@ pytestmark = pytest.mark.django_db
 
 @pytest.fixture
 def placed(seeded, shopper):
+    shopper.add("FS-RICE-01-5", 2)
+    order = shopper.checkout()
+    return shopper, order["number"], order["token"]
+
+
+@pytest.fixture
+def placed_real(real_catalog, shopper):
     shopper.add("FS-RICE-01-5", 2)
     order = shopper.checkout()
     return shopper, order["number"], order["token"]
@@ -223,8 +232,8 @@ def test_unknown_provider_rejected(placed):
     assert response.json()["error"]["code"] == "provider_unavailable"
 
 
-def test_zarinpal_cancel_failure_and_paid_retry(placed, settings, monkeypatch):
-    shopper, number, token = placed
+def test_zarinpal_cancel_failure_and_paid_retry(placed_real, settings, monkeypatch):
+    shopper, number, token = placed_real
     assert settings.CLASS["ZARINPAL"] == "apps.payments.banks.Zarinpal"
     settings.PUBLIC_BASE_URL = "https://shop.test"
     settings.AZ_IRANIAN_BANK_GATEWAYS = {
@@ -233,6 +242,8 @@ def test_zarinpal_cancel_failure_and_paid_retry(placed, settings, monkeypatch):
     }
     monkeypatch.setattr("azbankgateways.default_settings.BANK_GATEWAYS", settings.AZ_IRANIAN_BANK_GATEWAYS["GATEWAYS"])
     PaymentProvider.objects.filter(code="ZARINPAL").update(is_enabled=True)
+    providers = shopper.get("/payments/providers/").json()
+    assert next(provider["is_test"] for provider in providers if provider["code"] == "ZARINPAL") is False
     order = _order(number)
     callbacks = []
     verification_codes = iter((-51, 100))
@@ -276,6 +287,77 @@ def test_zarinpal_cancel_failure_and_paid_retry(placed, settings, monkeypatch):
     order.refresh_from_db()
     assert len(verify_requests) == 2
     assert order.payment_status == Order.PaymentStatus.PAID
-    assert order.payment_attempts.get(applied_to_order=True).reference_number == "123456789"
+    attempt = order.payment_attempts.get(applied_to_order=True)
+    assert attempt.reference_number == "123456789"
+    assert not attempt.is_test
+    assert not order.is_test
+    assert order.stock_state == Order.StockState.COMMITTED
     assert order.events.filter(kind="paid").count() == 1
     assert variant("FS-RICE-01-5").stock == 23
+
+
+@pytest.mark.parametrize("expired", [False, True], ids=["reserved-stock", "expired-reservation"])
+def test_zarinpal_sandbox_payment_marks_real_catalog_order_test_and_keeps_stock_available(
+    placed_real,
+    settings,
+    monkeypatch,
+    expired,
+):
+    shopper, number, token = placed_real
+    settings.ZARINPAL_SANDBOX = True
+    settings.AZ_IRANIAN_BANK_GATEWAYS = {
+        **settings.AZ_IRANIAN_BANK_GATEWAYS,
+        "GATEWAYS": {"ZARINPAL": {"MERCHANT_CODE": "00000000-0000-0000-0000-000000000001", "SANDBOX": 1}},
+    }
+    monkeypatch.setattr("azbankgateways.default_settings.BANK_GATEWAYS", settings.AZ_IRANIAN_BANK_GATEWAYS["GATEWAYS"])
+    PaymentProvider.objects.filter(code="ZARINPAL").update(is_enabled=True)
+    providers = shopper.get("/payments/providers/").json()
+    assert next(provider["is_test"] for provider in providers if provider["code"] == "ZARINPAL") is True
+
+    order = _order(number)
+    assert not order.is_test
+    assert order.stock_state == Order.StockState.RESERVED
+    assert variant("FS-RICE-01-5").stock == 23
+
+    authority = "A" + "1".zfill(35)
+    callbacks = []
+
+    def gateway_request(url, *, json, timeout):
+        assert url.startswith("https://sandbox.zarinpal.com/pg/v4/payment/")
+        if url.endswith("/request.json"):
+            callbacks.append(f"{json['callback_url']}&{urlencode({'Authority': authority, 'Status': 'OK'})}")
+            payload = {"data": {"code": 100, "authority": authority}}
+        else:
+            assert url.endswith("/verify.json")
+            assert json["authority"] == authority
+            payload = {"data": {"code": 100, "ref_id": 123456789}}
+        return Mock(status_code=200, json=Mock(return_value=payload))
+
+    monkeypatch.setattr("apps.payments.banks.requests.post", gateway_request)
+    gateway = shopper.start_payment(number, token, provider="ZARINPAL")
+    assert gateway.status_code == 200, gateway.json()
+    assert gateway.json()["url"] == f"https://sandbox.zarinpal.com/pg/StartPay/{authority}"
+    attempt = order.payment_attempts.get()
+    assert attempt.is_test
+
+    if expired:
+        past = timezone.now() - timedelta(hours=2)
+        Order.objects.filter(pk=order.pk).update(reservation_expires_at=past)
+        PaymentAttempt.objects.filter(pk=attempt.pk).update(created_at=past)
+        assert expire_order_if_due(order.pk)
+        assert variant("FS-RICE-01-5").stock == 25
+
+    shopper.follow_callback(callbacks[0])
+    shopper.follow_callback(callbacks[0])
+    order.refresh_from_db()
+    attempt.refresh_from_db()
+    assert attempt.status == PaymentAttempt.Status.SUCCEEDED and attempt.applied_to_order
+    assert order.status == Order.Status.CONFIRMED
+    assert order.payment_status == Order.PaymentStatus.PAID
+    assert order.is_test
+    assert order.stock_state == Order.StockState.RELEASED
+    assert variant("FS-RICE-01-5").stock == 25
+    assert order.events.filter(kind="paid").count() == 1
+    with pytest.raises(ApiError) as failure:
+        advance_fulfillment(order.pk, Order.FulfillmentStatus.PREPARING)
+    assert failure.value.error_code == "stock_not_committed"

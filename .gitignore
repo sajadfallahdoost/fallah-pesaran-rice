@@ -27,6 +27,7 @@ out/
 next-env.d.ts
 
 # Runtime data, dumps, generated documents
+marketing/instagram/.state/
 *.sql
 *.dump
 *.sqlite3

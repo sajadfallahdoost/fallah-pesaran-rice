@@ -1,0 +1,12 @@
+www.fallah-rice.ir {
+    encode zstd gzip
+    reverse_proxy nginx:80
+}
+
+fallah-rice.ir {
+    redir https://www.fallah-rice.ir{uri} permanent
+}
+
+http://fallah-rice.ir, http://213.176.21.32 {
+    redir https://www.fallah-rice.ir{uri} permanent
+}
