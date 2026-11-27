@@ -24,7 +24,7 @@ export function ProductGallery({ images, name }: { images: ImageRef[]; name: str
           fill
           preload
           sizes="(min-width: 1024px) 560px, 100vw"
-          className="object-cover"
+          className={`object-contain px-3 pb-4 pt-2 sm:px-5 sm:pb-6 sm:pt-3${current.is_generated_sample ? "" : " brightness-[1.02] contrast-[1.03]"}`}
           quality={80}
         />
       </div>
@@ -41,13 +41,13 @@ export function ProductGallery({ images, name }: { images: ImageRef[]; name: str
                 index === active ? "border-green-800" : "border-transparent hover:border-line"
               }`}
             >
-              <Image src={image.url} alt="" fill sizes="96px" className="object-cover" quality={70} />
+              <Image src={image.url} alt="" fill sizes="96px" className="object-contain" quality={70} />
             </button>
           ))}
         </div>
       )}
-      {images.some((image) => image.is_generated_sample) && (
-        <p className="text-xs text-ink-muted">تصاویر نمایشی‌اند و ممکن است با بستهٔ واقعی تفاوت داشته باشند.</p>
+      {current.is_generated_sample && (
+        <p className="text-xs text-ink-muted">تصویر نمونه</p>
       )}
     </div>
   );

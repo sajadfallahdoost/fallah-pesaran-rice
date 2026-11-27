@@ -185,7 +185,10 @@ def sync_attempt(attempt: PaymentAttempt) -> PaymentAttempt:
                 else:
                     attempt.status = PaymentAttempt.Status.SUCCEEDED
                     attempt.verified_at = timezone.now()
-                    attempt.reference_number = bank.reference_number
+                    if attempt.provider == "ZARINPAL" and (bank.response_result or "").isdigit():
+                        attempt.reference_number = bank.response_result
+                    else:
+                        attempt.reference_number = bank.reference_number
                     succeeded = True
             else:
                 attempt.status = new_status

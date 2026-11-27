@@ -20,7 +20,7 @@ environment **and** it is enabled in the admin (پرداخت › درگاه‌ه
 
 | Code | Name | Environment variables | Notes |
 |---|---|---|---|
-| `ZARINPAL` | زرین‌پال | `ZARINPAL_MERCHANT_CODE`, `ZARINPAL_SANDBOX` | Gateway works in toman; see units below. Has a sandbox. |
+| `ZARINPAL` | زرین‌پال | `ZARINPAL_MERCHANT_CODE`, `ZARINPAL_SANDBOX` | REST v4, integer rial, with a sandbox. |
 | `ZIBAL` | زیبال | `ZIBAL_MERCHANT_CODE` | Merchant `zibal` is Zibal's public test merchant. |
 | `SEP` | سامان (سپ) | `SEP_MERCHANT_CODE`, `SEP_TERMINAL_CODE` | POST redirect form. |
 | `MELLAT` | ملت (به‌پرداخت) | `MELLAT_TERMINAL_CODE`, `MELLAT_USERNAME`, `MELLAT_PASSWORD` | SOAP; POST callback. |
@@ -33,11 +33,9 @@ logs request payloads (including merchant ids) on gateway errors.
 
 ## Units
 
-The store stores and charges **integer rial**. The library is configured with `CURRENCY="IRR"` and
-converts at the gateway boundary. Zarinpal works in toman and the library converts with float
-division, so `apps/payments/banks.py` subclasses it to send an integer and to refuse an amount that
-is not a whole toman (all store amounts are validated as whole toman). Minimum amount: 1,000 in
-the gateway's unit.
+The storefront displays toman. Orders retain the server-calculated integer rial amount. Both the
+Zarinpal REST v4 request and its verification use that same rial amount. The payment request sends
+`currency="IRR"` explicitly. The adapter preserves the previous minimum of 1,000 toman.
 
 ## Flow
 
@@ -89,7 +87,7 @@ amount mismatch flags review; timeout followed by reconciliation applies the pay
 releases stock and a late payment reclaims it or flags review; a second successful payment is
 flagged, not applied; a paid order cannot start another payment; the order token never reaches the
 gateway; the mock gateway refuses foreign callbacks and is 404 when disabled; Zarinpal receives
-integer toman. See [TESTING.md](TESTING.md).
+integer rial. See [TESTING.md](TESTING.md).
 
 ## Going live
 

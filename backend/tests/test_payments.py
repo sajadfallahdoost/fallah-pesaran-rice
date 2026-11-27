@@ -1,5 +1,6 @@
 from datetime import timedelta
-from urllib.parse import parse_qs, urlparse
+from unittest.mock import Mock
+from urllib.parse import parse_qs, urlencode, urlparse
 
 import pytest
 from azbankgateways.models import Bank
@@ -7,7 +8,7 @@ from django.core.management import call_command
 from django.utils import timezone
 
 from apps.orders.models import Order
-from apps.payments.models import MockGatewayDecision, PaymentAttempt
+from apps.payments.models import MockGatewayDecision, PaymentAttempt, PaymentProvider
 from tests.conftest import variant
 
 pytestmark = pytest.mark.django_db
@@ -222,20 +223,59 @@ def test_unknown_provider_rejected(placed):
     assert response.json()["error"]["code"] == "provider_unavailable"
 
 
-def test_zarinpal_receives_integer_toman(settings):
-    from azbankgateways.exceptions import AmountDoesNotSupport
-    from azbankgateways.models import CurrencyEnum
-
-    from apps.payments.banks import Zarinpal
-
+def test_zarinpal_cancel_failure_and_paid_retry(placed, settings, monkeypatch):
+    shopper, number, token = placed
     assert settings.CLASS["ZARINPAL"] == "apps.payments.banks.Zarinpal"
-    bank = Zarinpal(MERCHANT_CODE="00000000-0000-0000-0000-000000000000", identifier="1")
-    bank.set_currency(CurrencyEnum.IRR)
-    bank.set_amount(36_200_000)
-    bank.prepare_amount()
-    assert bank.get_gateway_amount() == 3_620_000
-    assert type(bank.get_gateway_amount()) is int
+    settings.PUBLIC_BASE_URL = "https://shop.test"
+    settings.AZ_IRANIAN_BANK_GATEWAYS = {
+        **settings.AZ_IRANIAN_BANK_GATEWAYS,
+        "GATEWAYS": {"ZARINPAL": {"MERCHANT_CODE": "00000000-0000-0000-0000-000000000000", "SANDBOX": 0}},
+    }
+    monkeypatch.setattr("azbankgateways.default_settings.BANK_GATEWAYS", settings.AZ_IRANIAN_BANK_GATEWAYS["GATEWAYS"])
+    PaymentProvider.objects.filter(code="ZARINPAL").update(is_enabled=True)
+    order = _order(number)
+    callbacks = []
+    verification_codes = iter((-51, 100))
+    verify_requests = []
 
-    bank.set_amount(150_005)
-    with pytest.raises(AmountDoesNotSupport):
-        bank.prepare_amount()
+    def gateway_request(url, *, json, timeout):
+        assert type(json["amount"]) is int and json["amount"] == order.grand_total
+        assert url.startswith("https://payment.zarinpal.com/pg/v4/payment/")
+        if url.endswith("/request.json"):
+            authority = "A" + str(len(callbacks) + 1).zfill(35)
+            callback = json["callback_url"]
+            assert callback.startswith("https://testserver/bankgateways/callback/")
+            assert token not in callback
+            assert json["currency"] == "IRR"
+            callbacks.append(f"{callback}&{urlencode({'Authority': authority})}")
+            payload = {"data": {"code": 100, "authority": authority}}
+        else:
+            verify_requests.append(json["authority"])
+            code = next(verification_codes)
+            payload = {"data": {"code": code, "ref_id": 123456789} if code == 100 else []}
+        return Mock(status_code=200, json=Mock(return_value=payload))
+
+    monkeypatch.setattr("apps.payments.banks.requests.post", gateway_request)
+    for callback_status, expected in [
+        ("NOK", PaymentAttempt.Status.CANCELED),
+        ("OK", PaymentAttempt.Status.FAILED),
+        ("OK", PaymentAttempt.Status.SUCCEEDED),
+    ]:
+        result = shopper.client.post(
+            f"/api/v1/orders/{number}/pay/?t={token}",
+            {"provider": "ZARINPAL"},
+            content_type="application/json",
+            secure=True,
+        )
+        assert result.status_code == 200, result.json()
+        assert result.json()["url"].startswith("https://payment.zarinpal.com/pg/StartPay/A")
+        callback = f"{callbacks[-1]}&Status={callback_status}"
+        shopper.follow_callback(callback)
+        assert order.payment_attempts.order_by("-pk").first().status == expected
+    shopper.follow_callback(callback)
+    order.refresh_from_db()
+    assert len(verify_requests) == 2
+    assert order.payment_status == Order.PaymentStatus.PAID
+    assert order.payment_attempts.get(applied_to_order=True).reference_number == "123456789"
+    assert order.events.filter(kind="paid").count() == 1
+    assert variant("FS-RICE-01-5").stock == 23

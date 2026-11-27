@@ -67,7 +67,7 @@ export function ProductCard({ product, priority = false }: { product: ProductCar
             alt={product.image.alt}
             fill
             sizes="(min-width: 1280px) 300px, (min-width: 640px) 45vw, 92vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            className={`object-contain px-3 pb-4 pt-2${product.image.is_generated_sample ? "" : " brightness-[1.02] contrast-[1.03]"}`}
             loading={priority ? "eager" : "lazy"}
             quality={70}
           />
@@ -76,6 +76,9 @@ export function ProductCard({ product, priority = false }: { product: ProductCar
         )}
         <div className="absolute inset-x-3 top-3 flex flex-wrap gap-1.5">
           {product.is_sample && <SampleBadge />}
+          {product.image?.is_generated_sample && !product.is_sample && (
+            <span className="rounded-full bg-cream px-2.5 py-0.5 text-xs text-ink">تصویر نمونه</span>
+          )}
           {!product.in_stock && (
             <span className="rounded-full bg-ink/80 px-2.5 py-0.5 text-[0.72rem] font-semibold text-rice">ناموجود</span>
           )}

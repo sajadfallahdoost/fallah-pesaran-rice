@@ -149,3 +149,15 @@ def test_shipping_method_must_serve_destination(seeded, shopper):
     response = shopper.post("/checkout/", payload)
     assert response.status_code == 400
     assert response.json()["error"]["code"] == "shipping_unavailable"
+
+
+def test_cart_uses_available_stock_without_a_separate_limit(seeded, shopper):
+    stocked = variant("FS-RICE-01-5")
+    stocked.stock = 100
+    stocked.save(update_fields=["stock"])
+    cart = shopper.add(stocked.sku, 100)
+    assert cart["lines"][0]["quantity"] == 100
+    assert cart["lines"][0]["max_quantity"] == 100
+    response = shopper.post("/cart/items/", {"variant_id": stocked.pk, "quantity": 1})
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "insufficient_stock"

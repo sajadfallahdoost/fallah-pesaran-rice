@@ -88,7 +88,7 @@ class VariantSerializer(serializers.ModelSerializer):
         return obj.stock if obj.is_low_stock else None
 
     def get_max_quantity(self, obj):
-        return max(0, min(obj.stock, 50))
+        return max(0, obj.stock)
 
     def get_unit_price(self, obj):
         unit = obj.unit_price(self.context.get("now"))

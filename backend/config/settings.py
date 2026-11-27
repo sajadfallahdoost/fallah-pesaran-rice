@@ -262,8 +262,7 @@ if PAYMENT_MOCK_ENABLED:
 AZ_IRANIAN_BANK_GATEWAYS = {
     "GATEWAYS": _gateways,
     "DEFAULT": env("PAYMENT_DEFAULT_PROVIDER", "MOCK" if PAYMENT_MOCK_ENABLED else "ZARINPAL"),
-    # Canonical store currency: integer Iranian rial. The library converts to toman for
-    # gateways that require it (e.g. Zarinpal) at the payment boundary.
+    # Canonical store currency: integer Iranian rial. The library handles gateway currency.
     "CURRENCY": "IRR",
     "TRACKING_CODE_QUERY_PARAM": "tc",
     "TRACKING_CODE_LENGTH": 16,

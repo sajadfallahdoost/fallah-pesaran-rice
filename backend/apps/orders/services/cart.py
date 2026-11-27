@@ -8,7 +8,6 @@ from apps.orders.models import Cart, CartItem
 from apps.orders.services.pricing import PricedCart, price_lines, variant_purchase_issue
 
 SESSION_KEY = "cart_token"
-MAX_QUANTITY_PER_LINE = 50
 
 
 def get_cart(request, create: bool = False) -> Cart | None:
@@ -46,7 +45,7 @@ def merge_guest_cart_into_user(request, guest_token: str | None) -> None:
     for item in guest.items.all():
         existing = user_cart.items.filter(variant=item.variant).first()
         if existing:
-            existing.quantity = min(existing.quantity + item.quantity, MAX_QUANTITY_PER_LINE)
+            existing.quantity += item.quantity
             existing.save(update_fields=["quantity"])
         else:
             item.cart = user_cart
@@ -63,8 +62,8 @@ def _load_variant(variant_id: int) -> ProductVariant:
 
 
 def set_quantity(request, variant_id: int, quantity: int, *, add: bool = False) -> Cart:
-    if quantity < (1 if add else 0) or quantity > MAX_QUANTITY_PER_LINE:
-        raise ApiError(f"تعداد باید بین ۱ و {MAX_QUANTITY_PER_LINE} باشد.", code="invalid_quantity")
+    if quantity < (1 if add else 0):
+        raise ApiError("تعداد نامعتبر است.", code="invalid_quantity")
     variant = _load_variant(variant_id)
     cart = get_cart(request, create=True)
     item = cart.items.filter(variant=variant).first()
@@ -76,7 +75,6 @@ def set_quantity(request, variant_id: int, quantity: int, *, add: bool = False) 
         cart.save(update_fields=["updated_at"])
         return cart
 
-    new_quantity = min(new_quantity, MAX_QUANTITY_PER_LINE)
     code, message = variant_purchase_issue(variant, new_quantity)
     if code:
         raise ApiError(message, code=code, status_code=409)

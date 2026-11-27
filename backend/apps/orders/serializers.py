@@ -27,7 +27,7 @@ def cart_payload(priced: PricedCart, items) -> dict:
                 "list_unit_price": line.list_unit_price,
                 "line_total": line.line_total,
                 "stock_status": stock_status(variant),
-                "max_quantity": max(0, min(variant.stock, 50)),
+                "max_quantity": max(0, variant.stock),
                 "issue": line.issue,
                 "issue_code": line.issue_code,
                 "price_changed_from": (
