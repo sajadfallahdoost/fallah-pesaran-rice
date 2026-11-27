@@ -52,9 +52,10 @@ cp .env.production.example .env.production && chmod 600 .env.production
 python3 -c "import secrets; print(secrets.token_urlsafe(50))"   # for each secret
 ```
 
-Set `release="$(git rev-parse HEAD)"` and run the backend image build command from
-[Updating](#updating). Start the database and backend to create the Compose network
-before running the frontend image build command from the same section.
+Set `release="$(git rev-parse HEAD)"` and use the build commands from
+[Updating](#updating), starting at the `build_root` assignment. Start the database
+and backend after building the backend image so the Compose network is ready before
+the frontend image build.
 
 ```sh
 sh tools/compose-production.sh up -d --no-build --wait --wait-timeout 240 db backend scheduler
@@ -83,7 +84,8 @@ compatibility with the currently running release before the backend starts them.
 
 Run from `/opt/fallah-pesaran-rice` once the checkout is ready to advance. The tag for
 each running image preserves an image rollback point while rebuilding its normal tag.
-The old backend can serve the frontend build when its API is compatible. If a frontend
+The build uses the committed backend and frontend trees from the selected SHA. The
+old backend can serve the frontend build when its API is compatible. If a frontend
 build needs a new API from the same release, verify release ordering and migration
 compatibility in a separate environment before replacing the running services.
 
@@ -103,14 +105,19 @@ for service in backend frontend; do
   docker tag "$image_id" "fallah-pesaran/$service:rollback-$rollback_stamp"
 done
 
+build_root="$(mktemp -d)"
+trap 'rm -rf -- "$build_root"' EXIT
+git archive -o "$build_root/source.tar" "$release" backend frontend
+tar -xf "$build_root/source.tar" -C "$build_root"
+
 DOCKER_BUILDKIT=0 docker build --network=host --memory=512m --memory-swap=1200m \
   --cpu-period=100000 --cpu-quota=50000 --build-arg RELEASE_REVISION="$release" \
-  -t fallah-pesaran/backend:local backend
+  -t fallah-pesaran/backend:local "$build_root/backend"
 DOCKER_BUILDKIT=0 docker build --network=fallah-pesaran_default --memory=600m --memory-swap=1500m \
   --cpu-period=100000 --cpu-quota=50000 --build-arg RELEASE_REVISION="$release" \
   --build-arg BACKEND_INTERNAL_URL=http://backend:8000 \
   --build-arg NEXT_PUBLIC_SITE_URL=https://www.fallah-rice.ir \
-  -t fallah-pesaran/frontend:local frontend
+  -t fallah-pesaran/frontend:local "$build_root/frontend"
 sh tools/compose-production.sh up -d --no-build --wait --wait-timeout 240
 ```
 
