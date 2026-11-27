@@ -49,6 +49,10 @@ def configured_provider_codes() -> set[str]:
     return set(settings.AZ_IRANIAN_BANK_GATEWAYS["GATEWAYS"].keys())
 
 
+def is_test_provider(code: str) -> bool:
+    return code == "MOCK" or (code == "ZARINPAL" and settings.ZARINPAL_SANDBOX)
+
+
 def available_providers() -> list[PaymentProvider]:
     configured = configured_provider_codes()
     return [p for p in PaymentProvider.objects.filter(is_enabled=True) if p.code in configured]
@@ -122,7 +126,7 @@ def start_payment(order: Order, provider_code: str, request) -> GatewayRedirect:
         provider=provider_code,
         amount=order.grand_total,
         currency=order.currency,
-        is_test=provider_code == "MOCK",
+        is_test=is_test_provider(provider_code),
     )
     callback_url = f"{settings.PUBLIC_BASE_URL}/api/v1/payments/return/?attempt={attempt.public_id}"
     try:

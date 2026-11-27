@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 
 from apps.core.money import format_toman
 from apps.payments.models import MockGatewayDecision
-from apps.payments.services import available_providers, handle_return
+from apps.payments.services import available_providers, handle_return, is_test_provider
 
 
 class ProvidersView(APIView):
@@ -21,7 +21,7 @@ class ProvidersView(APIView):
                     "name": p.display_name,
                     "description": p.description,
                     "is_default": p.is_default,
-                    "is_test": p.code == "MOCK",
+                    "is_test": is_test_provider(p.code),
                 }
                 for p in available_providers()
             ]

@@ -232,10 +232,15 @@ if IS_PRODUCTION and PAYMENT_MOCK_ENABLED:
     raise ImproperlyConfigured("PAYMENT_MOCK_ENABLED must be False in production.")
 
 _gateways: dict[str, dict] = {}
-if env("ZARINPAL_MERCHANT_CODE"):
+ZARINPAL_SANDBOX = env_bool("ZARINPAL_SANDBOX", False)
+if ZARINPAL_SANDBOX or env("ZARINPAL_MERCHANT_CODE"):
     _gateways["ZARINPAL"] = {
-        "MERCHANT_CODE": env("ZARINPAL_MERCHANT_CODE"),
-        "SANDBOX": int(env_bool("ZARINPAL_SANDBOX", False)),
+        "MERCHANT_CODE": (
+            env("ZARINPAL_SANDBOX_MERCHANT_CODE", "00000000-0000-4000-8000-000000000001")
+            if ZARINPAL_SANDBOX
+            else env("ZARINPAL_MERCHANT_CODE")
+        ),
+        "SANDBOX": int(ZARINPAL_SANDBOX),
     }
 if env("ZIBAL_MERCHANT_CODE"):
     _gateways["ZIBAL"] = {"MERCHANT_CODE": env("ZIBAL_MERCHANT_CODE")}

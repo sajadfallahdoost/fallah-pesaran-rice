@@ -67,7 +67,10 @@ def apply_verified_payment(order_id: int, attempt) -> str:
         return "after_cancel"
 
     now = timezone.now()
-    if order.stock_state == Order.StockState.RELEASED and not try_reserve_again(order):
+    if attempt.provider == "ZARINPAL" and attempt.is_test:
+        if order.stock_state == Order.StockState.RESERVED:
+            release_reservation(order, "آزادسازی موجودی پرداخت آزمایشی")
+    elif order.stock_state == Order.StockState.RELEASED and not try_reserve_again(order):
         _flag(order, "پرداخت پس از پایان رزرو انجام شد و موجودی کافی نیست؛ تأمین کالا یا بازپرداخت لازم است.")
         _event(order, "late_payment_no_stock", "پرداخت دیرهنگام بدون موجودی کافی؛ نیازمند بررسی فروشگاه.")
     else:
