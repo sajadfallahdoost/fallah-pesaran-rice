@@ -48,7 +48,7 @@ export function BuyBox({
   if (!variant) return <p className="text-ink-muted">این محصول فعلاً بستهٔ قابل فروش ندارد.</p>;
 
   const stock = stockText(variant);
-  const canBuy = purchasable && salesEnabled && stock.tone !== "out" && variant.max_quantity > 0;
+  const canAddToCart = purchasable && stock.tone !== "out" && variant.max_quantity > 0;
 
   async function addToCart() {
     if (!variant) return;
@@ -141,7 +141,7 @@ export function BuyBox({
         )}
       </div>
 
-      {canBuy ? (
+      {canAddToCart ? (
         <div className="flex flex-wrap items-center gap-3">
           <QuantityStepper
             value={quantity}
@@ -159,11 +159,14 @@ export function BuyBox({
         </div>
       ) : (
         <p className="rounded-xl border border-line bg-white px-4 py-3 text-sm text-ink-soft">
-          {!salesEnabled
-            ? "ثبت سفارش موقتاً غیرفعال است."
-            : !purchasable
-              ? "این محصول فعلاً برای فروش عرضه نمی‌شود."
-              : "این بسته فعلاً موجود نیست. بستهٔ دیگری را انتخاب کنید یا بعداً سر بزنید."}
+          {!purchasable
+            ? "این محصول فعلاً برای فروش عرضه نمی‌شود."
+            : "این بسته فعلاً موجود نیست. بستهٔ دیگری را انتخاب کنید یا بعداً سر بزنید."}
+        </p>
+      )}
+      {!salesEnabled && (
+        <p className="rounded-xl border border-line bg-white p-4 text-sm text-ink-soft">
+          ثبت سفارش موقتاً غیرفعال است.
         </p>
       )}
 
